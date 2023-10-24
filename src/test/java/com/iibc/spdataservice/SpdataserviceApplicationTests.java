@@ -1,10 +1,8 @@
 package com.iibc.spdataservice;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.Test;
 
-@SpringBootTest
-class SpdataserviceApplicationTests {
+public class SpdataserviceApplicationTests {
 
 	@Test
 	void contextLoads() {

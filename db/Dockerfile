@@ -6,6 +6,8 @@ COPY entrypoint.sh /root/entrypoint.sh
 
 COPY ./conf/settings.conf /root/settings.conf
 
+COPY init.sql /root/init.sql
+
 RUN chmod 777 /root/entrypoint.sh
 
 EXPOSE 3306

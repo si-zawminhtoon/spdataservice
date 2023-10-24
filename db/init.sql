@@ -1,11 +1,11 @@
 -- backup command
--- mysqldump -u root -p --default-character-set=utf8 --hex-blob boovoicedb > init.sql
+-- mysqldump -u root -p --default-character-set=utf8 --hex-blob appdb > init.sql
 
-USE boovoicedb;
+USE appdb;
 
 -- MySQL dump 10.13  Distrib 8.0.23, for Linux (x86_64)
 --
--- Host: localhost    Database: boovoicedb
+-- Host: localhost    Database: appdb
 -- ------------------------------------------------------
 -- Server version	8.0.23
 
