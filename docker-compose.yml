@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  app:
+      build: 
+        context: ./
+        args:
+          DEVELOPER_UID: $DEVELOPER_UID
+      container_name: spdataservices_dev_app_$BRANCH_NAME
+      volumes:
+        - ./app/spdataservices/:/home/spdataservices/
+      environment:
+        TZ: 'Asia/Tokyo'
+      expose:
+        - "8080"
+      ports:
+        - "8080:8080"
+      depends_on:
+        - db
+      restart: always
+
+  db:
+      build:
+        context: ./db
+        args:
+          DEVELOPER_UID: $DEVELOPER_UID
+      container_name: spdataservices_dev_db_$BRANCH_NAME
+      ports:
+        - "3306:3306"
+      environment:
+        TZ: 'Asia/Tokyo'
+      volumes:
+        - ./db/lib/:/var/lib/mysql
+        - ./db/conf/my.cnf:/etc/my.cnf
+      restart: always
