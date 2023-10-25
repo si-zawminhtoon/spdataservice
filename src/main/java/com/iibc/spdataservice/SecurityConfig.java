@@ -14,6 +14,7 @@ import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMap
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -28,11 +29,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login/oauth2")
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userAuthoritiesMapper(grantedAuthoritiesMapper())));
+        http.oauth2Login(oauth2 -> oauth2
+                .loginPage("/")
+                .userInfoEndpoint(userInfo -> userInfo
+                        .userAuthoritiesMapper(grantedAuthoritiesMapper())))
+                .logout(logout -> logout
+                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                        .addLogoutHandler(logoutHandler));
         return http.build();
     }
 
