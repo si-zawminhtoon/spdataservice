@@ -1,0 +1,19 @@
+@startuml
+
+participant User
+participant WebApp
+participant Auth0
+participant API
+
+User -> WebApp : Click Login link
+WebApp -> Auth0 : Authorization Code Request to /authorize
+Auth0 -> User : Redirect to login/authorization prompt
+User -> Auth0 : Authenticate and consent
+Auth0 -> WebApp : Sent single-use Authorization Code
+WebApp -> Auth0 : Authorization Code + Client ID + Client Secret to /oauth/token
+Auth0 -> Auth0 : Validate Authorization Code + Client ID + Client Secret
+Auth0 -> WebApp : ID Token and Access Token
+WebApp -> API : Request User Data with Access Token
+API -> WebApp : Response
+
+@enduml

@@ -27,8 +27,8 @@ public class HomeController {
         logger.info("Hello Info");
         logger.warn("Hello Warn");
         logger.error("Hello Error");
-        
+
         return "index";
     }
-    
+
 }
