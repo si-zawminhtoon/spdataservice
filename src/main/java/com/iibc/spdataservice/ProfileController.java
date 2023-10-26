@@ -3,14 +3,9 @@ package com.iibc.spdataservice;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -49,21 +46,20 @@ public class ProfileController {
         var oAuth2AuthorizedClient = authorizedClientService.loadAuthorizedClient(
                 oAuth2AuthenticationToken.getAuthorizedClientRegistrationId(), oidcUser.getName());
 
-        var accessToken = oAuth2AuthorizedClient.getAccessToken().getTokenValue();
-        JSONObject myJSON;
-        try {
-            com.mashape.unirest.http.HttpResponse<JsonNode> resp = Unirest.post("https://dev-zawminhto/oauth/token")
-                    .header("content-type", "application/x-www-form-urlencoded")
-                    .body("grant_type=client_credentials&client_id=Qcz08WqWkdQKlxIeDFofTtluuLbjZ1rf&client_secret=KwriXi2mPlv56WdlUpAYZv58bsDzMdal6BBNnOgDBM0g6bIkaXRr7ibr4QepXa2J&audience=https://test-api")
-                    .asJson();
+        OAuth2AccessToken accessToken = oAuth2AuthorizedClient.getAccessToken();
+        OAuth2RefreshToken refreshToken = oAuth2AuthorizedClient.getRefreshToken();
 
-            myJSON = resp.getBody().getObject();
-        } catch (UnirestException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        var accessTokenStr = "";
+        var refreshTokenStr = "";
+        if (accessToken != null) {
+            accessTokenStr = accessToken.getTokenValue();
+        }
+        if (refreshToken != null) {
+            refreshTokenStr = refreshToken.getTokenValue();
         }
 
-        model.addAttribute("accessToken", accessToken);
+        model.addAttribute("accessToken", accessTokenStr);
+        model.addAttribute("refreshToken", refreshTokenStr);
         return "profile";
     }
 
