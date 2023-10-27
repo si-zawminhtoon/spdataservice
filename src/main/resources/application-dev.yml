@@ -1,0 +1,39 @@
+server:
+    port: 8080
+
+logging:
+    level:
+        root: ERROR
+        org:
+            springframework:
+                web: ERROR
+        com:
+            iibc:
+                spdataservice: TRACE
+
+spring:
+    datasource:
+        url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/appdb
+        username: appuser
+        password: pass
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    security:
+        oauth2:
+            client:
+                registration:
+                    auth0:
+                        client-id: Qcz08WqWkdQKlxIeDFofTtluuLbjZ1rf
+                        client-secret: KwriXi2mPlv56WdlUpAYZv58bsDzMdal6BBNnOgDBM0g6bIkaXRr7ibr4QepXa2J
+                        scope:
+                            - openid
+                            - profile
+                            - email
+                            - offline_access
+                provider:
+                    auth0:
+                        issuer-uri: https://dev-zawminhtoon.jp.auth0.com/
+            resourceserver:
+                jwt.issuer-uri: https://dev-zawminhtoon.jp.auth0.com/
+
+auth0:
+    audience: https://test-api

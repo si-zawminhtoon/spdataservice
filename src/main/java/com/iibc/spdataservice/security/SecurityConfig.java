@@ -43,8 +43,6 @@ public class SecurityConfig {
 
     private final LogoutHandler logoutHandler;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
     public SecurityConfig(LogoutHandler logoutHandler) {
         this.logoutHandler = logoutHandler;
     }
@@ -106,8 +104,6 @@ public class SecurityConfig {
                     OidcUserAuthority userAuthority = (OidcUserAuthority) authority;
                     mappedAuthority = new OidcUserAuthority(
                             "OIDC_USER", userAuthority.getIdToken(), userAuthority.getUserInfo());
-                    logger.error("Hello Info {}", userAuthority.getIdToken());
-                    logger.error("Hello Info {}", userAuthority.getUserInfo());
 
                 } else if (authority instanceof OAuth2UserAuthority) {
                     OAuth2UserAuthority userAuthority = (OAuth2UserAuthority) authority;

@@ -25,7 +25,7 @@ if [ ! -e /var/lib/mysql/ibdata1 ] ; then
   mysql -e "CREATE USER appuser IDENTIFIED BY '$USER_PW'; " 
   mysql -e "GRANT ALL PRIVILEGES ON appdb.* TO 'appuser'@'%'; " 
   mysql -e "FLUSH PRIVILEGES; " 
-  # mysql < /root/init.sql
+  mysql < /root/init.sql
   mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED by '$DB_ROOT_PW'; " 
   mysqladmin shutdown
 

@@ -1,44 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE logback>
 <configuration>
 
-  <!-- 標準出力用設定 -->
-  <appender name="BAR-STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+  <!-- コンソール出力設定 -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.out</target>
     <encoder>
-      <pattern>
-        %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
-      </pattern>
+      <charset>UTF-8</charset>
+      <pattern>%d{yyyy/MM/dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
 
-  <!-- ファイル出力用設定 -->
-  <appender name="SPDATASERVICE-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+  <property name="LOG_FILE" value="spdataservice" />
+  <property name="LOG_DIR" value="logs" />
+  <!-- アプリケーションログのファイル出力用設定 -->
+  <appender name="APPLICATION_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <!--ファイル名設定 -->
+    <file>${LOG_DIR}/${LOG_FILE}.log</file>
+    <!-- 日毎にログファイルを切り替える -->
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <!-- 日毎にログファイルを切り替える -->
-      <fileNamePattern>spdataservice-%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>${LOG_DIR}/${LOG_FILE}-%d{yyyy-MM-dd}.log.zip</fileNamePattern>
       <!-- 保持しておくログアーカイブファイルの最大数 -->
       <maxHistory>30</maxHistory>
     </rollingPolicy>
+    <!--ログ出力フォーマット設定 -->
     <encoder>
-      <pattern>%date %level [%thread] %logger{10} [%file : %line] %msg%n</pattern>
+      <charset>UTF-8</charset>
+      <pattern>%d{yyyy/MM/dd HH:mm:ss} %-5level [%thread] %logger{36} [%file : %line] %msg%n</pattern>
     </encoder>
   </appender>
 
-  <!-- ルートロガー -->
-  <!-- DEBUG, INFO, WARN, ERROR レベルのログを出力 -->
+  <!-- ルートDEBUG, INFO, WARN, ERROR レベルのログを出力 -->
   <root level="DEBUG">
-    <!-- 全てのロガーのメッセージを定義した BAR-STDOUT アペンダーに出力 -->
-    <appender-ref ref="BAR-STDOUT"/>
+    <!-- 全てのロガーのメッセージを定義した STDOUT アペンダーに出力 -->
+    <appender-ref ref="STDOUT"/>
   </root>
 
-  <!-- INFO, WARN, ERROR レベルのログを出力 -->
-  <logger name="com.iibc.spdataservice.info" level="INFO"/>
-
-  <!-- WARN, ERROR レベルのログを出力 -->
-  <logger name="com.iibc.spdataservice.warn" level="WARN"/>
-
-  <!-- ERROR レベルのログを出力 -->
-  <logger name="com.iibc.spdataservice.error" level="ERROR">
-    <!-- 定義した SPDATASERVICE-FILE アペンダーに出力 -->
-    <appender-ref ref="SPDATASERVICE-FILE"/>
+  <!-- パッケージ用ロガー -->
+  <logger name="com.iibc.spdataservice" level="INFO">
+      <appender-ref ref="APPLICATION_LOG" />
   </logger>
-
 </configuration>

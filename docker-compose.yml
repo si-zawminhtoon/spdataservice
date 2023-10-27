@@ -1,24 +1,7 @@
 version: '3.8'
 
 services:
-  app:
-      build: 
-        context: ./
-        args:
-          DEVELOPER_UID: $DEVELOPER_UID
-      container_name: spdataservices_dev_app_$BRANCH_NAME
-      volumes:
-        - ./app/spdataservices/:/home/spdataservices/
-      environment:
-        TZ: 'Asia/Tokyo'
-      expose:
-        - "8080"
-      ports:
-        - "8080:8080"
-      depends_on:
-        - db
-      restart: always
-
+  #service 1: mysqlデータベースの定義
   db:
       build:
         context: ./db
@@ -30,6 +13,27 @@ services:
       environment:
         TZ: 'Asia/Tokyo'
       volumes:
-        - ./db/lib/:/var/lib/mysql
+        # - ./db/lib/:/var/lib/mysql
         - ./db/conf/my.cnf:/etc/my.cnf
+      restart: always
+
+  #service 2: アプリケーションの定義
+  app:
+      build: 
+        context: ./
+        args:
+          DEVELOPER_UID: $DEVELOPER_UID
+      container_name: spdataservices_dev_app_$BRANCH_NAME
+      volumes:
+        - ./app/spdataservices/:/home/spdataservices/
+      environment:
+        TZ: 'Asia/Tokyo'
+        SPRING_PROFILES_ACTIVE: $SPRING_PROFILES_ACTIVE
+        MYSQL_HOST: spdataservices_dev_db_$BRANCH_NAME
+      expose:
+        - "8080"
+      ports:
+        - "8080:8080"
+      depends_on:
+        - db
       restart: always

@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 groonga/mroonga:mysql-8.0.28-12.00
+FROM mysql:8.0.28
 
 COPY ./conf/my.cnf /etc/my.cnf
 
