@@ -12,9 +12,9 @@ services:
         - "3306:3306"
       environment:
         TZ: 'Asia/Tokyo'
-      volumes:
+      # volumes:
         # - ./db/lib/:/var/lib/mysql
-        - ./db/conf/my.cnf:/etc/my.cnf
+        # - ./db/conf/my.cnf:/etc/my.cnf
       restart: always
 
   #service 2: アプリケーションの定義
@@ -25,7 +25,7 @@ services:
           DEVELOPER_UID: $DEVELOPER_UID
       container_name: spdataservices_dev_app_$BRANCH_NAME
       volumes:
-        - ./app/spdataservices/:/home/spdataservices/
+        - ./logs/:/app/logs/
       environment:
         TZ: 'Asia/Tokyo'
         SPRING_PROFILES_ACTIVE: $SPRING_PROFILES_ACTIVE
@@ -33,7 +33,7 @@ services:
       expose:
         - "8080"
       ports:
-        - "8080:8080"
+        - "8081:8080"
       depends_on:
         - db
       restart: always

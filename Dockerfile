@@ -2,15 +2,13 @@
 FROM gradle:jdk21-alpine
 
 # Set the working directory inside the container
-WORKDIR /home/spdataservices
+WORKDIR /app
 
 # Copy the Gradle build files ( build.gradle and settings.gradle)
 COPY build.gradle settings.gradle /app/
 
 # Copy the entire project
 COPY ./src /app/src
-
-WORKDIR /app
 
 # Build the application using Gradle
 RUN gradle build
@@ -19,4 +17,4 @@ RUN gradle build
 EXPOSE 8080
 
 # Command to run the Spring Boot Application when the container starts
-CMD ["java", "-jar", "/app/build/libs/spdataservice-1.0.0.jar"]
+CMD ["java", "-Xdebug", "-jar", "/app/build/libs/spdataservice-1.0.0.jar"]

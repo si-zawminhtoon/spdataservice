@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,11 +47,16 @@ public class ProfileController {
         var oAuth2AuthorizedClient = authorizedClientService.loadAuthorizedClient(
                 oAuth2AuthenticationToken.getAuthorizedClientRegistrationId(), oidcUser.getName());
 
+        OidcIdToken idToken = oidcUser.getIdToken();
         OAuth2AccessToken accessToken = oAuth2AuthorizedClient.getAccessToken();
         OAuth2RefreshToken refreshToken = oAuth2AuthorizedClient.getRefreshToken();
 
+        var idTokenStr = "";
         var accessTokenStr = "";
         var refreshTokenStr = "";
+        if (idToken != null) {
+            idTokenStr = idToken.getTokenValue();
+        }
         if (accessToken != null) {
             accessTokenStr = accessToken.getTokenValue();
         }
@@ -58,6 +64,7 @@ public class ProfileController {
             refreshTokenStr = refreshToken.getTokenValue();
         }
 
+        model.addAttribute("idToken", idTokenStr);
         model.addAttribute("accessToken", accessTokenStr);
         model.addAttribute("refreshToken", refreshTokenStr);
         return "profile";

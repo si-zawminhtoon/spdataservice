@@ -10,6 +10,8 @@ COPY init.sql /root/init.sql
 
 RUN chmod 777 /root/entrypoint.sh
 
+RUN chmod 777 /var/log
+
 EXPOSE 3306
 
 ENTRYPOINT ["/root/entrypoint.sh"]
