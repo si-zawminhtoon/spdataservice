@@ -19,23 +19,17 @@ spring:
         driver-class-name: com.mysql.cj.jdbc.Driver
     thymeleaf:
         cache: false
-    security:
-        oauth2:
-            client:
-                registration:
-                    auth0:
-                        client-id: Qcz08WqWkdQKlxIeDFofTtluuLbjZ1rf
-                        client-secret: KwriXi2mPlv56WdlUpAYZv58bsDzMdal6BBNnOgDBM0g6bIkaXRr7ibr4QepXa2J
-                        scope:
-                            - openid
-                            - profile
-                            - email
-                            - offline_access
-                provider:
-                    auth0:
-                        issuer-uri: https://dev-zawminhtoon.jp.auth0.com/
-            resourceserver:
-                jwt.issuer-uri: https://dev-zawminhtoon.jp.auth0.com/
-
-auth0:
+        
+okta:
+  oauth2:
+    # Replace with the domain of your Auth0 tenant.
+    issuer: https://dev-zawminhtoon.jp.auth0.com/
+    # Replace with the API Identifier for your Auth0 API.
     audience: https://test-api
+    client-id: Qcz08WqWkdQKlxIeDFofTtluuLbjZ1rf
+    client-secret: KwriXi2mPlv56WdlUpAYZv58bsDzMdal6BBNnOgDBM0g6bIkaXRr7ibr4QepXa2J
+    scopes: 
+      - openid
+      - profile
+      - email
+      - offline_access

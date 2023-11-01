@@ -54,11 +54,21 @@ public class ProfileController {
         var idTokenStr = "";
         var accessTokenStr = "";
         var refreshTokenStr = "";
+        var idTokenExpire = "";
+        var accessTokenExpire = "";
         if (idToken != null) {
             idTokenStr = idToken.getTokenValue();
+            java.time.Instant expire = idToken.getExpiresAt();
+            if (expire != null) {
+                idTokenExpire = expire.toString();
+            }
         }
         if (accessToken != null) {
             accessTokenStr = accessToken.getTokenValue();
+            java.time.Instant expire = accessToken.getExpiresAt();
+            if (expire != null) {
+                accessTokenExpire = expire.toString();
+            }
         }
         if (refreshToken != null) {
             refreshTokenStr = refreshToken.getTokenValue();
@@ -67,6 +77,8 @@ public class ProfileController {
         model.addAttribute("idToken", idTokenStr);
         model.addAttribute("accessToken", accessTokenStr);
         model.addAttribute("refreshToken", refreshTokenStr);
+        model.addAttribute("idTokenExpire", idTokenExpire);
+        model.addAttribute("accessTokenExpire", accessTokenExpire);
         return "profile";
     }
 

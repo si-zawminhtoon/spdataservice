@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-    layout:decorator="layouts/default">
+<html lang="en" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/default}">
 
 <div id="page" layout:fragment="content">
     <div class="container">
@@ -21,18 +20,27 @@
                 </div>
 
                 <div class="row">
-                    <h2 th:text="idToken" />
-                    <p class="lead text-muted" th:text="${idToken}" />
+                    <h2 th:text="'idToken Expire At '+${idTokenExpire}" />
+                    <pre class="rounded">
+                        <code class="json" th:text="${idToken}">
+                        </code>
+                    </pre>
                 </div>
 
                 <div class="row">
-                    <h2 th:text="accessToken" />
-                    <p class="lead text-muted" th:text="${accessToken}" />
+                    <h2 th:text="'accessToken Expire At '+${accessTokenExpire}" />
+                    <pre class="rounded">
+                        <code class="json" th:text="${accessToken}">
+                        </code>
+                    </pre>
                 </div>
 
                 <div class="row">
                     <h2 th:text="refreshToken" />
-                    <p class="lead text-muted" th:text="${refreshToken}" />
+                    <pre class="rounded">
+                        <code class="json" th:text="${refreshToken}">
+                        </code>
+                    </pre>
                 </div>
             </div>
         </div>

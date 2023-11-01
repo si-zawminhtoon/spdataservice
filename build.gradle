@@ -28,6 +28,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'com.okta.spring:okta-spring-boot-starter:3.0.5'
 	
 	// SLF4J を使う
 	implementation 'org.slf4j:slf4j-api:2.0.9'

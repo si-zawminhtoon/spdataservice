@@ -1,9 +1,5 @@
 package com.iibc.spdataservice.security;
 
-import com.iibc.spdataservice.LogoutHandler;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -13,18 +9,25 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Configures our application with Spring Security to restrict access to our API
@@ -35,16 +38,17 @@ import java.util.Set;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Value("${auth0.audience}")
+    @Value("${okta.oauth2.issuer}")
+    private String issuer;
+    @Value("${okta.oauth2.client-id}")
+    private String clientId;
+    @Value("${okta.oauth2.audience}")
     private String audience;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String issuer;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
-    private final LogoutHandler logoutHandler;
-
-    public SecurityConfig(LogoutHandler logoutHandler) {
-        this.logoutHandler = logoutHandler;
+    public SecurityConfig(ClientRegistrationRepository clientRegistrationRepository) {
+        this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
     @Bean
@@ -54,15 +58,15 @@ public class SecurityConfig {
          * our app to serve as
          * an OAuth2 Resource Server, using JWT validation.
          */
-        http.oauth2Login(oauth2 -> oauth2
-                .loginPage("/")
-                .redirectionEndpoint(redirection -> redirection
-                        .baseUri("/login/oauth2/code/auth0"))
-                .userInfoEndpoint(userInfo -> userInfo
-                        .userAuthoritiesMapper(grantedAuthoritiesMapper())))
+        http
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestResolver(
+                                        authorizationRequestResolver(this.clientRegistrationRepository)))
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userAuthoritiesMapper(grantedAuthoritiesMapper())))
                 .logout(logout -> logout
-                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                        .addLogoutHandler(logoutHandler))
+                        .addLogoutHandler(logoutHandler()))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/", "/images/**").permitAll()
@@ -72,6 +76,33 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()));
         return http.build();
+    }
+
+    private OAuth2AuthorizationRequestResolver authorizationRequestResolver(
+            ClientRegistrationRepository clientRegistrationRepository) {
+
+        DefaultOAuth2AuthorizationRequestResolver authorizationRequestResolver = new DefaultOAuth2AuthorizationRequestResolver(
+                clientRegistrationRepository, "/oauth2/authorization");
+        authorizationRequestResolver.setAuthorizationRequestCustomizer(
+                authorizationRequestCustomizer());
+
+        return authorizationRequestResolver;
+    }
+
+    private Consumer<OAuth2AuthorizationRequest.Builder> authorizationRequestCustomizer() {
+        return customizer -> customizer
+                .additionalParameters(params -> params.put("audience", audience));
+    }
+
+    private LogoutHandler logoutHandler() {
+        return (request, response, authentication) -> {
+            try {
+                String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+                response.sendRedirect(issuer + "v2/logout?client_id=" + clientId + "&returnTo=" + baseUrl);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Bean
