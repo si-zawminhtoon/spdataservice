@@ -1,0 +1,737 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+ Ordr - stepfunctions Set up.
+
+  #########################################################################################
+  # ??????????
+  #########################################################################################
+
+Parameters:
+  ###################################################################
+  # ???????
+  ###################################################################
+
+  # ????????
+  Service:
+    Type: String
+    Default: ordr
+  # ????
+  Environment:
+    Type: String
+    Default: Dev
+  # ???? ???
+  environment:
+    Type: String
+    Default: dev
+  # ??ID
+  envId:
+    AllowedValues: ["bo01", "bo02", "bo03"]
+    Type: String
+    Default: bo01
+
+# bo01-dev-ordr-batch-task01-ORDR09004B001
+# bo01-dev-ordr-batch-task02-ORDR09008B001
+# bo01-dev-ordr-batch-task03-ORDR01008B001
+# bo01-dev-ordr-batch-task04-ORDR09004B002
+# bo01-dev-ordr-batch-task05-ORDR09009B001
+# bo01-dev-ordr-batch-task06-ORDR09003B001
+# bo01-dev-ordr-batch-task07-ORDR09006B001
+# bo01-dev-ordr-batch-task08-ORDR09004B003
+# bo01-dev-ordr-batch-task09-ORDR02017B001
+
+  #########################################################################################
+  # ?????????
+  #########################################################################################
+
+Resources:
+
+  #################################################
+  # StepFunctions LogGroup??
+  #################################################
+
+  OrdrStepFunctionsLogGroupORDR09004B001:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09004B001-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09004B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR09008B001:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09008B001-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09008B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR01008B001:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR01008B001-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR01008B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR09004B002:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09004B002-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09004B002-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR09009B001:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09009B001-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09009B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR09003B001:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09003B001-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09003B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR09006B001:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09006B001-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09006B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR09004B003:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09004B003-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR09004B003-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsLogGroupORDR02017B001:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR02017B001-stepfunctions
+      Tags:
+        - Key: Name
+          Value: !Sub /aws/vendedlogs/states/${envId}-${environment}-${Service}-ORDR02017B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  #################################################
+  # StepFunctions StateMachine??
+  #################################################
+  OrdrStepFunctionsStateMachineORDR09004B001:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR09004B001-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR09004B001.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR09004B001",
+            "States": {
+              "ORDR09004B001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task01-ORDR09004B001",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR09004B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR09008B001:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR09008B001-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR09008B001.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR09008B001",
+            "States": {
+              "ORDR09008B001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task02-ORDR09008B001",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR09008B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR01008B001:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR01008B001-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR01008B001.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR01008B001",
+            "States": {
+              "ORDR01008B001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task03-ORDR01008B001",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR01008B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR09004B002:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR09004B002-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR09004B002.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR09004B002",
+            "States": {
+              "ORDR09004B002": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task04-ORDR09004B002",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR09004B002-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR09009B001:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR09009B001-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR09009B001.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR09009B001",
+            "States": {
+              "ORDR09009B001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task05-ORDR09009B001",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR09009B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR09003B001:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR09003B001-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR09003B001.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR09003B001",
+            "States": {
+              "ORDR09003B001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task06-ORDR09003B001",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR09003B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR09006B001:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR09006B001-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR09006B001.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR09006B001",
+            "States": {
+              "ORDR09006B001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task07-ORDR09006B001",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR09006B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR09004B003:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR09004B003-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR09004B003.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR09004B003",
+            "States": {
+              "ORDR09004B003": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task08-ORDR09004B003",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR09004B003-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  OrdrStepFunctionsStateMachineORDR02017B001:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${envId}-${environment}-${Service}-ORDR02017B001-stepfunctions
+      StateMachineType: STANDARD
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup: !GetAtt OrdrStepFunctionsLogGroupORDR02017B001.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      RoleArn: arn:aws:iam::000323109652:role/bo01-dev-ordr-stepfunctions-role
+      DefinitionString: |-
+        {
+            "Comment": "start by Machine",
+            "StartAt": "ORDR02017B001",
+            "States": {
+              "ORDR02017B001": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                "Parameters": {
+                  "LaunchType": "FARGATE",
+                  "Cluster": "arn:aws:ecs:ap-northeast-1:000323109652:cluster/bo01-dev-fargate",
+                  "TaskDefinition": "arn:aws:ecs:ap-northeast-1:000323109652:task-definition/bo01-dev-ordr-batch-task09-ORDR02017B001",
+                  "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                      "Subnets": [
+                        "subnet-0e5b5881e7759526b",
+                        "subnet-06cb0a095d4319fb9"
+                      ],
+                      "SecurityGroups": [
+                        "sg-04c900ba43b6702d2"
+                      ],
+                      "AssignPublicIp": "DISABLED"
+                    }
+                  }
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Failure"
+                  }
+                ],
+                "Next": "Success"
+              },
+              "Success": {
+                "Type": "Pass",
+                "Result": "Success",
+                "End": true
+              },
+              "Failure": {
+                "Type": "Fail"
+              }
+            }
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-ORDR02017B001-stepfunctions
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment

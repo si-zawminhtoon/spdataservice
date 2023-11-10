@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  CloudFrontPriceClass:
+    Type: String
+    Default: "PriceClass_200"
+    AllowedValues: ["PriceClass_100", "PriceClass_200", "PriceClass_All"]
+
+  FargateDNS:
+    Type: String
+
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub "Created by ${AWS::StackName}"
+        DefaultCacheBehavior:
+          TargetOriginId: fargateOrigin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: "none"
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          OriginRequestPolicyId: acba4595-bd28-49b8-b9fe-13317c0390fa # UserAgentRefererHeaders
+          Compress: true
+        DefaultRootObject: index.html
+        Enabled: true
+        PriceClass: !Ref CloudFrontPriceClass
+        Origins:
+          - DomainName: !Sub ${FargateDNS}.s3.amazonaws.com
+            Id: fargateOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Description: !Sub "OAC of ${FargateDNS}. Created by ${AWS::StackName}"
+        Name: !Sub "OAC-${FargateDNS}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+Outputs:
+  CloudfrontDomainName:
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudfrontDomainName"

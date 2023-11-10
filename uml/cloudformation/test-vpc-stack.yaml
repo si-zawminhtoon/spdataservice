@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  ContainerSecurityGroup:
+    Type: String
+
+  PJPrefix:
+    Type: String
+
+  VpcSubnet:
+    Type: String
+
+  TaskCpu:
+    Type: Number
+
+  TaskMemory:
+    Type: Number
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${PJPrefix}-cluster"
+
+  FargateService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Sub "${PJPrefix}-cluster"
+      LaunchType: FARGATE
+      TaskDefinition: !Ref FargateTask
+      DesiredCount: 1
+      ServiceName: !Sub "${PJPrefix}-service"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref VpcSubnet
+          SecurityGroups:
+            - !Ref ContainerSecurityGroup
+
+  FargateTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: FargateTask
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: !Ref TaskCpu
+      Memory: !Ref TaskMemory
+      ContainerDefinitions:
+        - Image: nginx:latest
+          Name: !Sub "${PJPrefix}-task-container"
+
+  FargateTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy

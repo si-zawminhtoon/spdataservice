@@ -1,0 +1,352 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  Mnpp-Ppgm - Web-Admin-ECS Set up.
+
+  #########################################################################################
+  # ??????????
+  #########################################################################################
+
+Parameters:
+  ###################################################################
+  # ???????
+  ###################################################################
+
+  # ????????
+  Service:
+    Type: String
+    Default: mnpp-ppgm
+  # ???????? ???
+  SERVICE:
+    Type: String
+    Default: MNPP-PPGM
+  # ????
+  Environment:
+    Type: String
+    Default: Dev
+  # ???? ???
+  environment:
+    Type: String
+    Default: dev
+  # ???? ???
+  ENVIRONMENT:
+    Type: String
+    Default: DEV
+  # ??????????1a
+  PriSub1a:
+    Type: String
+    Default: subnet-0f996803098fd0487
+  # ??????????1c
+  PriSub1c:
+    Type: String
+    Default: subnet-02b6394d4b8cf8a81
+  # ??????????1d ???
+  # PriSub1d:
+  #   Type: String
+  # ECS?????
+  EcsCluster:
+    Type: String
+    Default: bo02-dev-fargate
+  # ??ID bo01
+  envId:
+    AllowedValues: ["bo01", "bo02", "bo03"]
+    Type: String
+    Default: bo02
+  # ??ID ??? bo01
+  ENVID:
+    AllowedValues: ["BO01", "BO02", "BO03"]
+    Type: String
+    Default: BO02
+  # ECS?????????????
+  AdminEcsDesiredCount:
+    Type: Number
+    Default: 2
+  # AutoScaling???????
+  AdminEcsAutoScalingMinCapacity:
+    Type: Number
+    Default: 2
+  # AutoScaling???????
+  AdminEcsAutoScalingMaxCapacity:
+    Type: Number
+    Default: 4
+  # AutoScaling???
+  AdminEcsAutoScalingTargetValue:
+    Type: Number
+    Default: 60
+  # ??????????????
+  AdminEcsAutoScalingScaleInCooldown:
+    Type: Number
+    Default: 60
+  # ???????????????
+  AdminEcsAutoScalingScaleOutCooldown:
+    Type: Number
+    Default: 60
+
+  #########################################################################################
+  # ?????????
+  #########################################################################################
+
+Resources:
+  #################################################
+  # ECS?????????
+  #################################################
+
+  MnppPpgmWebAdminEcsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/logs/${envId}-${environment}-${Service}-web-admin
+      Tags:
+        - Key: Name
+          Value: !Sub /ecs/logs/${envId}-${environment}-${Service}-web-admin
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: CmBillingGroup
+          Value: !Ref Service
+
+  #################################################
+  # ECS ??????
+  #################################################
+  MnppPpgmWebAdminEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      #??????????????
+      EnableExecuteCommand: true
+      Cluster: !Ref EcsCluster
+      DesiredCount: !Ref AdminEcsDesiredCount
+      #?Blue/Green (CODE_DEPLOY) ?????????CodeDeploy ???
+      #  Blue/Green ???????????????????????????????????????????????????????
+      DeploymentController:
+        Type: CODE_DEPLOY
+      HealthCheckGracePeriodSeconds: 3600
+      LaunchType: FARGATE
+      LoadBalancers:
+        - TargetGroupArn: !ImportValue MnppPpgmWebAdminAlbBlueTargetGroupOutput
+          #ContainerPort: 80
+          ContainerPort: 8080
+          ContainerName: !Sub ${envId}-${environment}-${Service}-web-admin-container
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !ImportValue MnppPpgmWebAdminSecurityGroupOutput
+          Subnets:
+            - !Ref PriSub1a
+            - !Ref PriSub1c
+            # ???
+            # - !Ref PriSub1d
+      ServiceName: !Sub ${envId}-${environment}-${Service}-web-admin-service
+      TaskDefinition: !Ref MnppPpgmWebAdminEcsTask
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-web-admin-service
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: CmBillingGroup
+          Value: !Ref Service
+
+  #########################################################################################
+  # Admin-Web-ECS AutoScaling Service??
+  #########################################################################################
+  ServiceAutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${envId}-${environment}-${Service}-web-admin-autoscaling-role
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: application-autoscaling.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub ${envId}-${environment}-${Service}-web-admin-autoscaling
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - application-autoscaling:*
+                  - ecs:RunTask
+                  - ecs:UpdateSerice
+                  - ecs:DescribeServices
+                  - cloudwatch:PutMetricAlarm
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:SetAlarmState
+                  - cloudwatch:DeleteAlarms
+                Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-web-admin-autoscaling-role
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: CmBillingGroup
+          Value: !Ref Service
+
+  ServiceAutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: !Ref AdminEcsAutoScalingMinCapacity
+      MaxCapacity: !Ref AdminEcsAutoScalingMaxCapacity
+      RoleARN: !GetAtt ServiceAutoScalingRole.Arn
+      ServiceNamespace: ecs
+      ScalableDimension: "ecs:service:DesiredCount"
+      ResourceId: !Join
+        - /
+        - - service
+          - !Ref EcsCluster
+          - !GetAtt MnppPpgmWebAdminEcsService.Name
+
+  CPUAutoScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: CPUAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ServiceAutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: !Ref AdminEcsAutoScalingTargetValue
+        ScaleInCooldown: !Ref AdminEcsAutoScalingScaleInCooldown
+        ScaleOutCooldown: !Ref AdminEcsAutoScalingScaleOutCooldown
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+
+  #################################################
+  # ECS ???????
+  #################################################
+
+  MnppPpgmWebAdminEcsTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Cpu: "1024"
+      ExecutionRoleArn: !ImportValue MnppPpgmWebAdminEcsTaskExecRole
+      TaskRoleArn: !ImportValue MnppPpgmWebAdminEcsTaskRole
+      Family: !Sub ${envId}-${environment}-${Service}-web-admin-task
+      Memory: "2048"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      # ??????
+      ContainerDefinitions:
+        - Name: !Sub ${envId}-${environment}-${Service}-web-admin-container
+          # ecr???????dockerimage?Pull
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${envId}-${environment}-${Service}-web-admin-ecr:latest
+          LogConfiguration:
+            # LogDriver?awslogs
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref MnppPpgmWebAdminEcsLogGroup
+              awslogs-region: !Sub ${AWS::Region}
+              awslogs-stream-prefix: !Sub ${envId}-${environment}-${Service}
+          MemoryReservation: 256
+          PortMappings:
+            - HostPort: 80
+              Protocol: tcp
+              ContainerPort: 80
+            - HostPort: 8080
+              Protocol: tcp
+              ContainerPort: 8080
+          MountPoints: 
+            - SourceVolume: "bo02-dev-mnpp-ppgm-efs"
+              ContainerPath: "/mnt"
+              ReadOnly: False
+          Environment:
+            - Name: TZ
+              Value: Asia/Tokyo
+          # # #????
+          # Secrets:
+          #   - Name: ppgm.common.aws.s3.region
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_AWS_S3_REGION
+          #   - Name: ppgm.common.aws.s3.bucket
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_AWS_S3_BUCKET
+          #   - Name: ppgm.common.s3.work
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_S3_WORK
+          #   - Name: ppgm.common.mycp.aws.secret.name
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_MYCP_AWS_SECRET_NAME
+          #   - Name: ppgm.common.aws.sqs.queue.name
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_AWS_SQS_QUEUE_NAME
+          #   - Name: ppgm.spring.session.store-type
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SESSION_STORE_TYPE
+          #   - Name: ppgm.spring.session.redis.namespace
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SESSION_REDIS_NAMESPACE
+          #   - Name: ppgm.spring.redis.port
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_REDIS_PORT
+          #   - Name: ppgm.spring.redis.host
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_REDIS_HOST
+          #   - Name: ppgm.spring.redis.cluster.nodes
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_REDIS_CLUSTER_NODES
+          #   - Name: spring.profiles.active
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_WEB_SPRING_PROFILES_ACTIVE
+          #   - Name: ppgm.common.invt.aws.secret.gateway.key
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_INVT_AWS_SECRET_GATEWAY_KEY
+          #   - Name: ppgm.common.invt.iss
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_INVT_ISS
+          #   - Name: ppgm.common.invt.api.aws.secret.name
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_INVT_API_AWS_SECRET_NAME
+          #   - Name: ppgm.common.invt.aws.secret.region
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_INVT_AWS_SECRET_REGION
+          #   - Name: ppgm.common.invt.url
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_INVT_URL
+          #   - Name: ppgm.spring.security.client.id
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CLIENT_ID
+          #   - Name: ppgm.spring.security.client.secret
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CLIENT_SECRET
+          #   - Name: ppgm.spring.security.client.name
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CLIENT_NAME
+          #   - Name: ppgm.spring.security.provider
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_PROVIDER
+          #   - Name: ppgm.spring.security.customer.client.authentication.method
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CUSTOMER_CLIENT_AUTHENTICATION_METHOD
+          #   - Name: ppgm.spring.security.authorization.grant.type
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_AUTHORIZATION_GRANT_TYPE
+          #   - Name: ppgm.spring.security.client.redirect.uri
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CLIENT_REDIRECT_URI
+          #   - Name: ppgm.spring.security.customer.scope
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CUSTOMER_SCOPE
+          #   - Name: ppgm.spring.security.client.authorization.uri
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CLIENT_AUTHORIZATION_URI
+          #   - Name: ppgm.spring.security.client.token.uri
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CLIENT_TOKEN_URI
+          #   - Name: ppgm.spring.security.client.jwk.set.uri
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-SPRING_SECURITY_CLIENT_JWK_SET_URI
+          #   - Name: ppgm.base.url
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-BASE_URL
+          #   - Name: ppgm.ordr.host.base.url
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-ORDR_HOST_BASE_URL
+          #   - Name: ppgm.common.datasource.url
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_DATASOURCE_URL
+          #   - Name: ppgm.common.datasource.username
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_DATASOURCE_USERNAME
+          #   - Name: ppgm.common.secret.db.pw
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_SECRET_DB_PW
+          #   - Name: ppgm.common.secret.name
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_SECRET_NAME
+          #   - Name: ppgm.common.secret.region
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_SECRET_REGION
+          #   - Name: ppgm.common.crypto.iv
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_CRYPTO_IV
+          #   - Name: ppgm.common.crypto.secretkey
+          #     ValueFrom: !Sub arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/${ENVID}-${ENVIRONMENT}-${SERVICE}-COMMON_CRYPTO_SECRETKEY
+      Volumes:
+        - Name: 'bo02-dev-mnpp-ppgm-efs'
+          EFSVolumeConfiguration:
+            AuthorizationConfig:
+              AccessPointId: !ImportValue Bo02MnppPpgmAccessPointStack
+              IAM: 'ENABLED'
+            FilesystemId: !ImportValue Bo02MnppPpgmFileSystemStack
+            TransitEncryption: 'ENABLED'
+            RootDirectory: "/"
+            TransitEncryptionPort: 2049
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-web-admin-task
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: CmBillingGroup
+          Value: !Ref Service
+          

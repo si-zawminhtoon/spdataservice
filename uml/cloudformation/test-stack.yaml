@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: "bucket-name"
+
+  PJPrefix:
+    Type: String
+    Default: test
+
+  VpcCidrBlock:
+    Description: "VPCのCIDRブロック"
+    Type: String
+    Default: "10.0.0.0/16"
+
+  VpcSubnetCidr:
+    Description: "VPC SubnetのCIDRブロック"
+    Type: String
+    Default: "10.0.0.0/24"
+
+  AvailabilityZone1:
+    Type: String
+
+  HTTPPort:
+    Type: Number
+    Default: 80
+
+  # HTTPSPort:
+  #   Type: Number
+  #   Default: 443
+
+  TaskCpu:
+    Type: Number
+    Default: 512
+
+  TaskMemory:
+    Type: Number
+    Default: 1024
+
+  EmailIdentityArn:
+    Type: String
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${PJPrefix}/${PJPrefix}-vpc-stack.yaml"
+      Parameters:
+        PJPrefix: !Ref PJPrefix
+        AvailabilityZone1: !Ref AvailabilityZone1
+        VpcCidrBlock: !Ref VpcCidrBlock
+        VpcSubnetCidr: !Ref VpcSubnetCidr
+        HTTPPort: !Ref HTTPPort
+
+  FargateStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${PJPrefix}/${PJPrefix}-fargate-stack.yaml"
+      Parameters:
+        PJPrefix: !Ref PJPrefix
+        VpcSubnet: !GetAtt VPCStack.Outputs.VpcSubnet
+        TaskCpu: !Ref TaskCpu
+        TaskMemory: !Ref TaskMemory
+        ContainerSecurityGroup: !GetAtt VPCStack.Outputs.ContainerSecurityGroup
+
+  CloudfrontStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${PJPrefix}/${PJPrefix}-cf-stack.yaml"
+
+  CognitoStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${PJPrefix}/${PJPrefix}-cognito-stack.yaml"
+      Parameters:
+        EmailIdentityArn: !Ref EmailIdentityArn
