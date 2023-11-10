@@ -1,0 +1,228 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  Cafe(Cafeteria Plan) - API-Gateway Set up.
+
+  #########################################################################################
+  # ??????????
+  #########################################################################################
+
+Parameters:
+  ###################################################################
+  # ???????
+  ###################################################################
+
+  # ????????
+  Service:
+    Type: String
+  # ????
+  Environment:
+    Type: String
+  # ????(?????)
+  environment:
+    Type: String
+  # ??ID cafe?bo01
+  envId:
+    AllowedValues: ["bo01", "bo02"]
+    Type: String
+
+  #########################################################################################
+  # ?????????
+  #########################################################################################
+
+Resources:
+  #################################################
+  # API Gateway ????
+  #################################################
+
+  #################################################
+  # API Gateway ????????
+  #################################################
+  # CafeInternalApiApigatewayLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub /aws/apigateway/logs/${envId}-${environment}-${Service}-internalapi-apigateway
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub /aws/apigateway/logs/${envId}-${environment}-${Service}-internalapi-apigateway
+  #       - Key: Service
+  #         Value: !Ref Service
+  #       - Key: Environment
+  #         Value: !Ref Environment
+
+  ###############################
+  #VPClink??
+  ###############################
+  CafeApiVpcLink:
+    Type: AWS::ApiGateway::VpcLink
+    Properties:
+      Name: !Sub ${envId}-${environment}-${Service}-api-vpclink
+      TargetArns:
+        - !ImportValue CafeApiNlbOutput
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-api-vpclink
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  ####################################################################
+  # ????????
+  ####################################################################
+  CafeInternalApiApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      # Name: CafeApiApiKey
+      Name: !Sub ${envId}-${environment}-${Service}-internalapi-user-apikey
+      Description: CloudFormation API Key for Cafe Internal APIs From SecretsManager
+      Enabled: "true"
+      Value:
+        !Join [
+          "",
+          [
+            "{{resolve:secretsmanager:",
+            !ImportValue CafeSecretForInternalApiOutputFromSecretsManager,
+            ":SecretString:password}}",
+          ],
+        ]
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-internalapi-user-apikey
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  ####################################################################
+  # ???????? ????
+  ####################################################################
+  CafeInternalApiUsagePlan:
+    Type: "AWS::ApiGateway::UsagePlan"
+    Properties:
+      Description: !Sub ${envId}-${environment}-${Service}-internalapi-usageplan
+      # ?????????????????????
+      # Quota:
+      #   Limit: 2000
+      #   Period: DAY
+      # Throttle:
+      #   BurstLimit: 100
+      #   RateLimit: 100
+      UsagePlanName: !Sub ${envId}-${environment}-${Service}-internalapi-usageplan
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-internalapi-usageplan
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  ####################################################################
+  # ?????? ???????
+  ####################################################################
+  CafeInternalApiUsagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties:
+      KeyId: !Ref CafeInternalApiApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref CafeInternalApiUsagePlan
+
+  #################################################
+  # API Gateway ????
+  #################################################
+
+  #################################################
+  # API Gateway ????????
+  #################################################
+  # CafeExternalApiApigatewayLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub /aws/apigateway/logs/${envId}-${environment}-${Service}-externalapi-apigateway
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub /aws/apigateway/logs/${envId}-${environment}-${Service}-externalapi-apigateway
+  #       - Key: Service
+  #         Value: !Ref Service
+  #       - Key: Environment
+  #         Value: !Ref Environment
+
+  # VPCLink?1???????????????
+  # ###############################
+  #   #VPClink??
+  # ###############################
+  #   CafeApiVpcLink:
+  #     Type: AWS::ApiGateway::VpcLink
+  #     Properties:
+  #       Name: !Sub ${envId}-${environment}-${Service}-api-vpclink
+  #       TargetArns:
+  #         - !ImportValue CafeApiNlbOutput
+  #       Tags:
+  #         - Key: Name
+  #           Value: !Sub ${envId}-${environment}-${Service}-api-vpclink
+  #         - Key: Service
+  #           Value: !Ref Service
+  #         - Key: Environment
+  #           Value: !Ref Environment
+
+  ####################################################################
+  # ?????????????
+  ####################################################################
+  CafeExternalApiApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      # Name: CafeApiApiKey
+      Name: !Sub ${envId}-${environment}-${Service}-externalapi-user-apikey
+      Description: CloudFormation API Key for Cafe External APIs From SecretsManager
+      Enabled: "true"
+      #    StageKeys:
+      #      - RestApiId: !Ref RestAPI
+      #        StageName: !Ref Environment
+      # Value: '{{resolve:secretsmanager:PtexSecretsManagerForApi:SecretString:password}}'
+      Value:
+        !Join [
+          "",
+          [
+            "{{resolve:secretsmanager:",
+            !ImportValue CafeSecretForExternalApiOutputFromSecretsManager,
+            ":SecretString:password}}",
+          ],
+        ]
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-externalapi-user-apikey
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  ####################################################################
+  # ????????
+  ####################################################################
+  CafeExternalApiUsagePlan:
+    Type: "AWS::ApiGateway::UsagePlan"
+    Properties:
+      Description: !Sub ${envId}-${environment}-${Service}-externalapi-usageplan
+      # ?????????????????????
+      # Quota:
+      #   Limit: 2000
+      #   Period: DAY
+      # Throttle:
+      #   BurstLimit: 100
+      #   RateLimit: 100
+      UsagePlanName: !Sub ${envId}-${environment}-${Service}-externalapi-usageplan
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-externalapi-usageplan
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  ####################################################################
+  # ?????? ???????
+  ####################################################################
+  CafeExternalApiUsagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties:
+      KeyId: !Ref CafeExternalApiApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref CafeExternalApiUsagePlan

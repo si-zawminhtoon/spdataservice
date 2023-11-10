@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description:
-  MnppPpgm - CloudFront Set up.
+  Cafe(Cafeteria Plan) - CloudFront  Set up.
 
   #########################################################################################
   # ??????????
@@ -17,32 +17,26 @@ Parameters:
   # ????????
   Service:
     Type: String
-    Default: mnpp-ppgm
   # ????
   Environment:
     Type: String
-    Default: Dev
-  # ???? ???
-  environment:
-    Type: String
-    Default: dev
-  # ??ID
-  envId:
-    AllowedValues: ["bo01", "bo02", "bo03"]
-    Type: String
-    Default: bo02
   # ?????????????ACM????cloudfront??
   VirginiaAcm:
     Type: String
-    Default: arn:aws:acm:us-east-1:000323109652:certificate/0e08b3f1-80b1-4236-b225-fb183f76a4f3
-  # Web Admin Cloudfront?????????
-  WebAdminCloudfrontCustomDnsName:
+  # Web  Cloudfront?????????
+  # ????????????????????????CloudFormation??????????(CloudFormation???)
+  WebCloudfrontCustomDnsName:
     Type: String
-    Default: ppgm.mnpp.b-sysi.com
   # ALB?????????
-  WebAdminAlbCustomDnsName:
+  WebAlbCustomDnsName:
     Type: String
-    Default: admin-alb.ppgm.mnpp.b-sysi.com
+  # ????
+  environment:
+    Type: String
+  # ??ID bo01
+  envId:
+    AllowedValues: ["bo01", "bo02"]
+    Type: String
 
 ###################################################################
 # Input Parameters
@@ -53,7 +47,7 @@ Resources:
   #  CloudFront - Object Access Identity
   ###################################################################
 
-  # MnppPpgmWebAdminCloudFrontOriginAccessIdentity:
+  # CafeWebCloudFrontOriginAccessIdentity:
   #   Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
   #   Properties:
   #     CloudFrontOriginAccessIdentityConfig:
@@ -63,8 +57,8 @@ Resources:
   # #  S3 - BucketPolicy   # CloudFront?????????
   # ###################################################################
 
-  ## 3??????????????????????????????????????????????????????????
-  # MnppPpgmWebAdminCloudFrontBucketPolicy:
+## 3??????????????????????????????????????????????
+  # CafeWebCloudFrontBucketPolicy:
   #   Type: AWS::S3::BucketPolicy
   #   Properties:
   #     Bucket: !Sub ${envId}-${environment}-${Service}-s3-web-${AWS::AccountId}
@@ -74,12 +68,12 @@ Resources:
   #           Effect: Allow
   #           Resource: !Sub arn:aws:s3:::${envId}-${environment}-${Service}-s3-web-${AWS::AccountId}/*
   #           Principal:
-  #             AWS: !Sub arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${MnppPpgmWebAdminCloudFrontOriginAccessIdentity}
+  #             AWS: !Sub arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CafeWebCloudFrontOriginAccessIdentity}
 
   ###################################################################
   #  CloudFront - Distribution
   ###################################################################
-  MnppPpgmWebAdminDistribution:
+  CafeWebDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
@@ -89,23 +83,23 @@ Resources:
           # - Id: S3Origin
           #   DomainName: !Sub ${envId}-${environment}-${Service}-s3-web-${AWS::AccountId}.s3.${AWS::Region}.amazonaws.com
           #   S3OriginConfig:
-          #     OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${MnppPpgmWebAdminCloudFrontOriginAccessIdentity}"
+          #     OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CafeWebCloudFrontOriginAccessIdentity}"
           # Origin?ALB???
           - Id: AlbOrigin
-            # Web-Admin-ALB????????????
-            DomainName: !Ref WebAdminAlbCustomDnsName
+            # Web-ALB????????????
+            DomainName: !Ref WebAlbCustomDnsName
             CustomOriginConfig:
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
               OriginSSLProtocols: ["TLSv1.2"]
         Enabled: true
-        Comment: MnppPpgm Web Admin (operator) Distribution
+        Comment: Cafe Web (??) Distribution
         # DefaultRootObject: /
         #S3??????????
         Logging:
           #IncludeCookies: 'true'
-          Bucket: !ImportValue MnppPpgmS3LogDomainNameOutput
-          Prefix: !Sub RawLogs/cloudfront/${envId}-${environment}-${Service}-web-admin-cloudfront
+          Bucket: !ImportValue CafeS3LogDomainNameOutput
+          Prefix: !Sub RawLogs/cloudfront/${envId}-${environment}-${Service}-web-cloudfront
         #DefaultCacheBehavior???
         DefaultCacheBehavior:
           AllowedMethods:
@@ -131,47 +125,46 @@ Resources:
           MaxTTL: 0
         #CacheBehavior???(ALB)
         # CacheBehaviors:
-        # - AllowedMethods:
-        #     - DELETE
-        #     - GET
-        #     - HEAD
-        #     - OPTIONS
-        #     - PATCH
-        #     - POST
-        #     - PUT
-        #   TargetOriginId: AlbOrigin
-        #   ForwardedValues:
-        #     Headers:
-        #       - Host
-        #     QueryString: true
-        #     Cookies:
-        #       Forward: all
-        #   ViewerProtocolPolicy: redirect-to-https
-        #   PathPattern: /web/admin*
-        #   # ?????????????TTL?0????????
-        #   MinTTL: 0
-        #   DefaultTTL: 0
-        #   MaxTTL: 0
-        #CacheBehavior???(S3)
-        # - AllowedMethods:
-        #     - DELETE
-        #     - GET
-        #     - HEAD
-        #     - OPTIONS
-        #     - PATCH
-        #     - POST
-        #     - PUT
-        #   TargetOriginId: S3Origin
-        #   ForwardedValues:
-        #     QueryString: false
-        #     Cookies:
-        #       Forward: none
-        #   ViewerProtocolPolicy: https-only
-        #   PathPattern: /web/*
-        #   # ?????????????TTL?0????????
-        #   MinTTL: 0
-        #   DefaultTTL: 0
-        #   MaxTTL: 0
+          # - AllowedMethods:
+          #     - DELETE
+          #     - GET
+          #     - HEAD
+          #     - OPTIONS
+          #     - PATCH
+          #     - POST
+          #     - PUT
+          #   TargetOriginId: AlbOrigin
+          #   ForwardedValues:
+          #     Headers:
+          #       - Host
+          #     QueryString: true
+          #     Cookies:
+          #       Forward: all
+          #   ViewerProtocolPolicy: redirect-to-https
+          #   # ?????????????TTL?0????????
+          #   MinTTL: 0
+          #   DefaultTTL: 0
+          #   MaxTTL: 0
+          #CacheBehavior???(S3)
+          # - AllowedMethods:
+          #     - DELETE
+          #     - GET
+          #     - HEAD
+          #     - OPTIONS
+          #     - PATCH
+          #     - POST
+          #     - PUT
+          #   TargetOriginId: S3Origin
+          #   ForwardedValues:
+          #     QueryString: false
+          #     Cookies:
+          #       Forward: none
+          #   ViewerProtocolPolicy: https-only
+          #   PathPattern: /web/*
+          #   # ?????????????TTL?0????????
+          #   MinTTL: 0
+          #   DefaultTTL: 0
+          #   MaxTTL: 0
         # 50X????????Sorry???(503)??????????????
         CustomErrorResponses:
           - ErrorCode: 500
@@ -195,31 +188,27 @@ Resources:
             ResponseCode: 503
             ErrorCachingMinTTL: 0
         PriceClass: PriceClass_All
-        ###################################################################
-        # ACM???????????????????
-        ###################################################################
         # ??????????? (us-east-1) ????????????????????
         ViewerCertificate:
           AcmCertificateArn: !Ref VirginiaAcm
           MinimumProtocolVersion: "TLSv1.2_2021"
           SslSupportMethod: "sni-only"
         ###################################################################
-        # Cloudfront?????????????????????????
+        # ????????????????????????CloudFormation??????????(CloudFormation???)
         ###################################################################
         Aliases:
-          - !Ref WebAdminCloudfrontCustomDnsName
+          - !Ref WebCloudfrontCustomDnsName
       Tags:
         - Key: Name
-          Value: !Sub ${envId}-${environment}-${Service}-web-admin-cloudfront
+          Value: !Sub ${envId}-${environment}-${Service}-web-cloudfront
         - Key: Service
           Value: !Ref Service
         - Key: Environment
           Value: !Ref Environment
-        - Key: CmBillingGroup
-          Value: !Ref Service
+
 # Outputs:
 #   # ????????? OAI Output
-#   MnppPpgmWebAdminCloudFrontOriginAccessIdentityOutput:
-#     Value: !Ref MnppPpgmWebAdminCloudFrontOriginAccessIdentity
+#   CafeWebCloudFrontOriginAccessIdentityOutput:
+#     Value: !Ref CafeWebCloudFrontOriginAccessIdentity
 #     Export:
-#       Name: MnppPpgmWebAdminCloudFrontOriginAccessIdentityOutput
+#       Name: CafeWebCloudFrontOriginAccessIdentityOutput          

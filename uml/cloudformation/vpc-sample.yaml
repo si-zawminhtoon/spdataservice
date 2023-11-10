@@ -1,0 +1,1017 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Bo01 - VPC Set up.
+Parameters:
+  Service:
+    Type: String
+    Default: bo01
+  Environment:
+    Type: String
+    Default: dev
+  Envtag:
+    Type: String
+    Default: Dev
+  AvailabilityZone1a:
+    Type: String
+    Default: ap-northeast-1a
+  AvailabilityZone1c:
+    Type: String
+    Default: ap-northeast-1c
+
+  VpcIpAddress:
+    Type: String
+    Default: 10.96.0.0/16
+  PubSub1Ip:
+    Type: String
+    Default: 10.96.192.0/20
+  PubSub2Ip:
+    Type: String
+    Default: 10.96.208.0/20
+  Pri1Sub1Ip:
+    Type: String
+    Default: 10.96.0.0/18
+  Pri1Sub2Ip:
+    Type: String
+    Default: 10.96.64.0/18
+  Pri2Sub1Ip:
+    Type: String
+    Default: 10.96.240.0/22
+  Pri2Sub2Ip:
+    Type: String  
+    Default: 10.96.244.0/22
+  Pri3Sub1Ip:
+    Type: String
+    Default: 10.96.255.208/28
+  Pri3Sub2Ip:
+    Type: String
+    Default: 10.96.255.224/28
+
+  TrafficType:
+    Type: String
+    Default: ALL  ### VPC????? ACCEPT | ALL | REJECT ??????
+  VPCFlowLogS3Bucket:
+    Type: String
+    Default: bo01-dev-vpc-flowlog-bucket
+  RetentionInDays:
+    Type: String
+    Default: 60
+
+
+Resources: 
+
+# VPC??
+
+  Bo01DevVpc: 
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcIpAddress
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-vpc
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag 
+
+#####VPC???????######
+
+  Bo01DevVPCFlowLogs:
+    Type: "AWS::EC2::FlowLog"
+    Properties:
+#      LogDestination: !Ref VPCFlowLogS3Bucket
+      LogDestinationType: cloud-watch-logs
+      ResourceId: !Ref Bo01DevVpc
+      ResourceType: "VPC"
+      TrafficType: !Ref TrafficType  ### ACCEPT | ALL | REJECT ??????
+      DeliverLogsPermissionArn: !GetAtt VpcFlowLogsIamRole.Arn
+      LogGroupName: !Ref VpcFlowLogsLogGroup
+
+
+  VpcFlowLogsIamRole:
+  #--------------------------------------------------------------------
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub bo01-${Environment}-vpc-flowlogs-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "vpc-flow-logs.amazonaws.com"
+            Action:
+                - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub bo01-${Environment}-vpc-flowlogs-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "logs:DescribeLogGroups"
+                  - "logs:DescribeLogStreams"
+                Resource: "*"
+
+
+#--------------------------------------------------------------------
+  VpcFlowLogsLogGroup:
+#--------------------------------------------------------------------
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub bo01-${Environment}-vpc-flowlogs
+      RetentionInDays: !Ref RetentionInDays
+
+
+  # Use to add more cidr to existing VPC
+  # Bo01DevVpcCidrBlock:  
+  #   Type: AWS::EC2::VPCCidrBlock
+  #   Properties:
+  #     VpcId: !Ref Bo01DevVpc
+  #     CidrBlock: !Ref VpcIpAddress
+
+
+# ???????
+  Bo01DevPubSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref PubSub1Ip
+      AvailabilityZone: !Ref AvailabilityZone1a
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-public-subnet01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+#    DependsOn: Bo01DevVpcCidrBlock
+
+  Bo01DevPubSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref PubSub2Ip
+      AvailabilityZone: !Ref AvailabilityZone1c
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-public-subnet02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+#    DependsOn: Bo01DevVpcCidrBlock
+          
+  Bo01DevPri1Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref Pri1Sub1Ip
+      AvailabilityZone: !Ref AvailabilityZone1a
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private1-subnet01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+#    DependsOn: Bo01DevVpcCidrBlock
+
+  Bo01DevPri1Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref Pri1Sub2Ip
+      AvailabilityZone: !Ref AvailabilityZone1c
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private1-subnet02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+#    DependsOn: Bo01DevVpcCidrBlock
+
+  Bo01DevPri2Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref Pri2Sub1Ip
+      AvailabilityZone: !Ref AvailabilityZone1a
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private2-subnet01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+#    DependsOn: Bo01DevVpcCidrBlock
+
+  Bo01DevPri2Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref Pri2Sub2Ip
+      AvailabilityZone: !Ref AvailabilityZone1c
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private2-subnet02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+#    DependsOn: Bo01DevVpcCidrBlock
+
+  Bo01DevPri3Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref Pri3Sub1Ip
+      AvailabilityZone: !Ref AvailabilityZone1a
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private3-subnet01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+#    DependsOn: Bo01DevVpcCidrBlock
+
+  Bo01DevPri3Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      CidrBlock: !Ref Pri3Sub2Ip
+      AvailabilityZone: !Ref AvailabilityZone1c
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private3-subnet02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+#    DependsOn: Bo01DevVpcCidrBlock
+
+    
+  #################################################
+  # InternetGateway
+  #################################################
+
+  Bo01DevInternetGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-igw
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+  Bo01DevInternetGWAtt:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      InternetGatewayId: !Ref Bo01DevInternetGW
+
+
+  #################################################
+  # NatGateway
+  #################################################
+
+  Bo01DevNatGW1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt Bo01DevNatGW1EIP.AllocationId
+      SubnetId: !Ref Bo01DevPubSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-natgw01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+  Bo01DevNatGW1EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref Bo01DevVpc
+
+
+  Bo01DevNatGW2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt Bo01DevNatGW2EIP.AllocationId
+      SubnetId: !Ref Bo01DevPubSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-natgw02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+  Bo01DevNatGW2EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref Bo01DevVpc
+
+
+
+  ###################################################################
+  # ???????
+  ###################################################################
+
+  Bo01DevPubRtb:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-public-rtb01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+    DependsOn: Bo01DevInternetGWAtt
+
+
+  Bo01DevPubRouteIgw:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref Bo01DevPubRtb
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Bo01DevInternetGW
+    DependsOn: Bo01DevInternetGWAtt
+
+
+  Bo01DevSubnet1PubRtbAss:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPubSubnet1
+      RouteTableId: !Ref Bo01DevPubRtb
+
+
+  Bo01DevSubnet2PubRtbAss:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPubSubnet2
+      RouteTableId: !Ref Bo01DevPubRtb
+
+
+# For private1, subnet01
+  Bo01DevPri1Rtb1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private1-rtb01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevPri1Rtb1Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPri1Subnet1
+      RouteTableId: !Ref Bo01DevPri1Rtb1
+
+
+  Bo01DevPri1Route1NatGW:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref Bo01DevPri1Rtb1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref Bo01DevNatGW1
+#    DependsOn: Bo01DevNatGW1
+
+
+# For private1, subnet02
+  Bo01DevPri1Rtb2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private1-rtb02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevPri1Rtb2Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPri1Subnet2
+      RouteTableId: !Ref Bo01DevPri1Rtb2
+
+
+  Bo01DevPri1Route2NatGW:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref Bo01DevPri1Rtb2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref Bo01DevNatGW2
+#    DependsOn: Bo01DevNatGW2
+
+
+# For private2, subnet01
+  Bo01DevPri2Rtb1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private2-rtb01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevPri2Rtb1Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPri2Subnet1
+      RouteTableId: !Ref Bo01DevPri2Rtb1
+
+
+  # Bo01DevPri2Route1NatGW:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref Bo01DevPri2Rtb1
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     NatGatewayId: !Ref Bo01DevNatGW1
+#    DependsOn: Bo01DevNatGW1
+
+
+# For private2, subnet02
+  Bo01DevPri2Rtb2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private2-rtb02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevPri2Rtb2Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPri2Subnet2
+      RouteTableId: !Ref Bo01DevPri2Rtb2
+
+
+  # Bo01DevPri2Route2NatGW:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref Bo01DevPri2Rtb2
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     NatGatewayId: !Ref Bo01DevNatGW2
+#    DependsOn: Bo01DevNatGW2
+
+
+# For private3, subnet01
+  Bo01DevPri3Rtb1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private3-rtb01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevPri3Rtb1Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPri3Subnet1
+      RouteTableId: !Ref Bo01DevPri3Rtb1
+
+
+  # Bo01DevPri3Route1TGW:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref Bo01DevPri3Rtb1
+  #     DestinationCidrBlock: 10.99.0.0/18
+  #     TransitGatewayId: !Ref Bo01DevTGW
+  #   DependsOn: Bo01DevTGW
+
+
+  # Bo01DevPri3Route1TGW2:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref Bo01DevPri3Rtb1
+  #     DestinationCidrBlock: 10.99.64.0/18
+  #     TransitGatewayId: !Ref Bo01DevTGW
+  #   DependsOn: Bo01DevTGW
+    
+    
+
+  # Bo01DevPri3Route1NatGW:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref Bo01DevPri3Rtb1
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     NatGatewayId: !Ref Bo01DevNatGW1
+  #   DependsOn: Bo01DevNatGW1
+
+
+
+# For private3, subnet02
+  Bo01DevPri3Rtb2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub bo01-${Environment}-private3-rtb02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevPri3Rtb2Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Bo01DevPri3Subnet2
+      RouteTableId: !Ref Bo01DevPri3Rtb2
+
+
+  # Bo01DevPri3Route2NatGW:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref Bo01DevPri3Rtb2
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     GatewayId: !Ref Bo01DevNatGW2
+  #   DependsOn: Bo01DevNatGW2
+
+
+
+# TransitGateway. It should be created by other account.
+
+  # Bo01DevTGW:
+  #   Type: "AWS::EC2::TransitGateway"
+  #   Properties:
+  #     AutoAcceptSharedAttachments: enable
+  #     DefaultRouteTableAssociation: enable
+  #     DefaultRouteTablePropagation: enable
+  #     VpnEcmpSupport: enable
+  #     DnsSupport: enable
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub bo01-${Environment}-vpc-tgw
+  #       - Key: Service
+  #         Value: !Ref Service
+  #       - Key: Environment
+  #         Value: !Ref Envtag
+
+
+  # Bo01DevTGWAtt:
+  #   Type: "AWS::EC2::TransitGatewayAttachment"
+  #   Properties:
+  #     SubnetIds:
+  #       - !Ref Bo01DevPri3Subnet1
+  #       - !Ref Bo01DevPri3Subnet2
+  #     TransitGatewayId: !Ref Bo01DevTGW
+  #     VpcId: !Ref Bo01DevVpc
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub bo01-${Environment}-vpc-tgw-att
+  #       - Key: Service
+  #         Value: !Ref Service
+  #       - Key: Environment
+  #         Value: !Ref Envtag
+
+
+
+# ##############################################################
+# ## VPC?????????????????????
+# ######################################################
+
+  Bo01DevVpceEcrDkrSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      GroupName: !Sub bo01-${Environment}-ecrdkr-sg
+      GroupDescription: SecurityGroup for EcrKdr Endpoint
+      SecurityGroupIngress:
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSApiSG
+        #   Description: Access From ECS(Api)
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSBatchSG
+        #   Description: Access From ECS(Batch)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub1Ip
+          Description: Access From Private1 Subnet01
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub2Ip
+          Description: Access From Private1 Subnet02
+      SecurityGroupEgress:
+        - IpProtocol: "-1" 
+          FromPort: -1 
+          ToPort: -1 
+          CidrIp: 0.0.0.0/0 
+          Description: Allow All OutBound Traffic
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-ecrdkr-sg
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevVpceEcrApiSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      GroupName: !Sub bo01-${Environment}-ecrapi-sg
+      GroupDescription: SecurityGroup for EcrApi Endpoint
+      SecurityGroupIngress:
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSApiSG
+        #   Description: Access From ECS(Api)
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSBatchSG
+        #   Description: Access From ECS(Batch)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub1Ip
+          Description: Access From Private1 Subnet01
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub2Ip
+          Description: Access From Private1 Subnet02
+      SecurityGroupEgress:
+        - IpProtocol: "-1" 
+          FromPort: -1 
+          ToPort: -1 
+          CidrIp: 0.0.0.0/0 
+          Description: Allow All OutBound Traffic
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-ecrapi-sg
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevVpceCWLogSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      GroupName: !Sub bo01-${Environment}-cwl-sg
+      GroupDescription: SecurityGroup for CloudWatch Log Endpoint
+      SecurityGroupIngress:
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSApiSG
+        #   Description: Access From ECS(Api)
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSBatchSG
+        #   Description: Access From ECS(Batch)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub1Ip
+          Description: Access From Private1 Subnet01
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub2Ip
+          Description: Access From Private1 Subnet02
+      SecurityGroupEgress:
+        - IpProtocol: "-1" 
+          FromPort: -1 
+          ToPort: -1 
+          CidrIp: 0.0.0.0/0 
+          Description: Allow All OutBound Traffic
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-cwl-sg
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevVpceCodeCmitSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      GroupName: !Sub bo01-${Environment}-codecommit-sg
+      GroupDescription: SecurityGroup for CodeCommit Endpoint
+      SecurityGroupIngress:
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSApiSG
+        #   Description: Access From ECS(Api)
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSBatchSG
+        #   Description: Access From ECS(Batch)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub1Ip
+          Description: Access From Private1 Subnet01
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub2Ip
+          Description: Access From Private1 Subnet02
+      SecurityGroupEgress:
+        - IpProtocol: "-1" 
+          FromPort: -1 
+          ToPort: -1 
+          CidrIp: 0.0.0.0/0 
+          Description: Allow All OutBound Traffic
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-codecommit-sg
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevVpceApiGWSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      GroupName: !Sub bo01-${Environment}-apigateway-sg
+      GroupDescription: SecurityGroup for Execute ApiGW Endpoint
+      SecurityGroupIngress:
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSApiSG
+        #   Description: Access From ECS(Api)
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSBatchSG
+        #   Description: Access From ECS(Batch)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub1Ip
+          Description: Access From Private1 Subnet01
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub2Ip
+          Description: Access From Private1 Subnet02
+      SecurityGroupEgress:
+        - IpProtocol: "-1" 
+          FromPort: -1 
+          ToPort: -1 
+          CidrIp: 0.0.0.0/0 
+          Description: Allow All OutBound Traffic
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-apigateway-sg
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevVpceSecretMgrSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      GroupName: !Sub bo01-${Environment}-secm-sg
+      GroupDescription: SecurityGroup for Secret Manager Endpoint
+      SecurityGroupIngress:
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSApiSG
+        #   Description: Access From ECS(Api)
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSBatchSG
+        #   Description: Access From ECS(Batch)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub1Ip
+          Description: Access From Private1 Subnet01
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub2Ip
+          Description: Access From Private1 Subnet02
+      SecurityGroupEgress:
+        - IpProtocol: "-1" 
+          FromPort: -1 
+          ToPort: -1 
+          CidrIp: 0.0.0.0/0 
+          Description: Allow All OutBound Traffic
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-secm-sg
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+  Bo01DevVpceSSMSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Bo01DevVpc
+      GroupName: !Sub bo01-${Environment}-ssm-sg
+      GroupDescription: SecurityGroup for System Manager Endpoint
+      SecurityGroupIngress:
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSApiSG
+        #   Description: Access From ECS(Api)
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   SourceSecurityGroupId: !Ref Bo01DevECSBatchSG
+        #   Description: Access From ECS(Batch)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub1Ip
+          Description: Access From Private1 Subnet01
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref Pri1Sub2Ip
+          Description: Access From Private1 Subnet02
+      SecurityGroupEgress:
+        - IpProtocol: "-1" 
+          FromPort: -1 
+          ToPort: -1 
+          CidrIp: 0.0.0.0/0 
+          Description: Allow All OutBound Traffic
+      Tags: 
+        - Key: Name
+          Value: !Sub bo01-${Environment}-ssm-sg
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+
+Outputs:
+
+  Bo01DevVpcOutput:
+    Value: !Ref Bo01DevVpc
+    Export:
+      Name: Bo01DevVpc
+
+  Bo01DevPubSubnet1Output:
+    Value: !Ref Bo01DevPubSubnet1
+    Export:
+      Name: Bo01DevPubSubnet1
+
+  Bo01DevPubSubnet2Output:
+    Value: !Ref Bo01DevPubSubnet2
+    Export:
+      Name: Bo01DevPubSubnet2
+
+  Bo01DevPri1Subnet1Output:
+    Value: !Ref Bo01DevPri1Subnet1
+    Export:
+      Name: Bo01DevPri1Subnet1
+
+  Bo01DevPri1Subnet2Output:
+    Value: !Ref Bo01DevPri1Subnet2
+    Export:
+      Name: Bo01DevPri1Subnet2
+
+  Bo01DevPri2Subnet1Output:
+    Value: !Ref Bo01DevPri2Subnet1
+    Export:
+      Name: Bo01DevPri2Subnet1
+
+  Bo01DevPri2Subnet2Output:
+    Value: !Ref Bo01DevPri2Subnet2
+    Export:
+      Name: Bo01DevPri2Subnet2
+
+  Bo01DevPri3Subnet1Output:
+    Value: !Ref Bo01DevPri3Subnet1
+    Export:
+      Name: Bo01DevPri3Subnet1
+
+  Bo01DevPri3Subnet2Output:
+    Value: !Ref Bo01DevPri3Subnet2
+    Export:
+      Name: Bo01DevPri3Subnet2
+
+  Bo01DevPubRtbOutput:
+    Value: !Ref Bo01DevPubRtb
+    Export:
+      Name: Bo01DevPubRtb
+
+  Bo01DevPri1Rtb1Output:
+    Value: !Ref Bo01DevPri1Rtb1
+    Export:
+      Name: Bo01DevPri1Rtb1
+
+  Bo01DevPri1Rtb2Output:
+    Value: !Ref Bo01DevPri1Rtb2
+    Export:
+      Name: Bo01DevPri1Rtb2
+
+  Bo01DevPri2Rtb1Output:
+    Value: !Ref Bo01DevPri2Rtb1
+    Export:
+      Name: Bo01DevPri2Rtb1
+
+  Bo01DevPri2Rtb2Output:
+    Value: !Ref Bo01DevPri2Rtb2
+    Export:
+      Name: Bo01DevPri2Rtb2
+
+  Bo01DevPri3Rtb1Output:
+    Value: !Ref Bo01DevPri3Rtb1
+    Export:
+      Name: Bo01DevPri3Rtb1
+
+  Bo01DevPri3Rtb2Output:
+    Value: !Ref Bo01DevPri3Rtb2
+    Export:
+      Name: Bo01DevPri3Rtb2
+
+  Bo01DevVpceEcrDkrSGOutput:
+    Value: !Ref Bo01DevVpceEcrDkrSG
+    Export:
+      Name: Bo01DevVpceEcrDkrSG
+
+  Bo01DevVpceEcrApiSGOutput:
+    Value: !Ref Bo01DevVpceEcrApiSG
+    Export:
+      Name: Bo01DevVpceEcrApiSG
+
+  Bo01DevVpceCWLogSGOutput:
+    Value: !Ref Bo01DevVpceCWLogSG
+    Export:
+      Name: Bo01DevVpceCWLogSG
+
+  Bo01DevVpceCodeCmitSGOutput:
+    Value: !Ref Bo01DevVpceCodeCmitSG
+    Export:
+      Name: Bo01DevVpceCodeCmitSG
+
+  Bo01DevVpceApiGWSGOutput:
+    Value: !Ref Bo01DevVpceApiGWSG
+    Export:
+      Name: Bo01DevVpceApiGWSG
+
+  Bo01DevVpceSecretMgrSGOutput:
+    Value: !Ref Bo01DevVpceSecretMgrSG
+    Export:
+      Name: Bo01DevVpceSecretMgrSG
+
+  Bo01DevVpceSSMSGOutput:
+    Value: !Ref Bo01DevVpceSSMSG
+    Export:
+      Name: Bo01DevVpceSSMSG
+      

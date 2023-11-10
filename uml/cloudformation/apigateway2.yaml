@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  crpf(CRM Platform) - API-Gateway-sb Set up.
+
+  #########################################################################################
+  # ??????????
+  #########################################################################################
+Parameters:
+  # ????????
+  Service:
+    Type: String
+  # ????
+  Environment:
+    Type: String
+  # ????(?????)
+  environment:
+    Type: String
+  # ??ID cafe?bo01
+  envId:
+    AllowedValues: ["bo01", "bo02"]
+    Type: String
+
+  #########################################################################################
+  # ?????????
+  #########################################################################################
+Resources:
+  #################################################
+  # API Gateway ????????
+  #################################################
+  # CrpfInternalApiApigatewayLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub /aws/apigateway/logs/${envId}-${environment}-${Service}-internalapi-apigateway
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub /aws/apigateway/logs/${envId}-${environment}-${Service}-internalapi-apigateway
+  #       - Key: Service
+  #         Value: !Ref Service
+  #       - Key: Environment
+  #         Value: !Ref Environment
+
+  ###############################
+  #VPClink-sb??
+  ###############################
+  CrpfApiSbVpcLink:
+    Type: AWS::ApiGateway::VpcLink
+    Properties:
+      Name: !Sub ${envId}-${environment}-${Service}-api-sb-vpclink
+      TargetArns:
+        - !ImportValue CrpfApiSbNlbOutput
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-api-sb-vpclink
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  ####################################################################
+  # APIKey-sb?? ?APIKey???SecretManager???????
+  ####################################################################
+  # ????APIKey
+  CrpfInternalApiSbApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      # Name: CrpfApiApiKey
+      Name: !Sub ${envId}-${environment}-${Service}-internalapi-sb-apikey
+      Description: CloudFormation API Key for Crpf Internal API-sb From SecretsManager
+      Enabled: True
+      Value:
+        !Join [
+          "",
+          [
+            "{{resolve:secretsmanager:",
+            !ImportValue CrpfSecretForInternalApiSbOutputFromSecretsManager,
+            ":SecretString:password}}",
+          ],
+        ]
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-internalapi-sb-apikey
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ????APIKey
+  CrpfExternalApiSbApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      # Name: CrpfApiApiKey
+      Name: !Sub ${envId}-${environment}-${Service}-externalapi-sb-apikey
+      Description: CloudFormation API Key for Crpf External API-sb From SecretsManager
+      Enabled: True
+      Value:
+        !Join [
+          "",
+          [
+            "{{resolve:secretsmanager:",
+            !ImportValue CrpfSecretForExternalApiSbOutputFromSecretsManager
+,
+            ":SecretString:password}}",
+          ],
+        ]
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-externalapi-sb-apikey
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  ####################################################################
+  # ???????? ????
+  ####################################################################
+  # ??????????
+  CrpfInternalApiSbUsagePlan:
+    Type: "AWS::ApiGateway::UsagePlan"
+    Properties:
+      Description: !Sub ${envId}-${environment}-${Service}-internalapi-sb-usageplan
+      # ?????????????????????
+      # Quota:
+      #   Limit: 2000
+      #   Period: DAY
+      # Throttle:
+      #   BurstLimit: 100
+      #   RateLimit: 100
+      UsagePlanName: !Sub ${envId}-${environment}-${Service}-internalapi-sb-usageplan
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-internalapi-sb-usageplan
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ??????????
+  CrpfExternalApiSbUsagePlan:
+    Type: "AWS::ApiGateway::UsagePlan"
+    Properties:
+      Description: !Sub ${envId}-${environment}-${Service}-externalapi-sb-usageplan
+      # ?????????????????????
+      # Quota:
+      #   Limit: 2000
+      #   Period: DAY
+      # Throttle:
+      #   BurstLimit: 100
+      #   RateLimit: 100
+      UsagePlanName: !Sub ${envId}-${environment}-${Service}-externalapi-sb-usageplan
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-externalapi-sb-usageplan
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+  ####################################################################
+  # ?????? ???????
+  ####################################################################
+  # ?????????? ???????
+  CrpfInternalApiSbUsagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties:
+      KeyId: !Ref CrpfInternalApiSbApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref CrpfInternalApiSbUsagePlan
+
+  # ?????????? ???????
+  CrpfExternalApiSbUsagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties:
+      KeyId: !Ref CrpfExternalApiSbApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref CrpfExternalApiSbUsagePlan
