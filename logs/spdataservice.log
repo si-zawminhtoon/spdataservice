@@ -1,0 +1,110 @@
+2023/11/14 08:53:04 INFO  [http-nio-8080-exec-10] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 09:46:32 INFO  [http-nio-8080-exec-1] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 09:46:33 INFO  [http-nio-8080-exec-3] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 09:46:40 INFO  [http-nio-8080-exec-7] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 09:46:42 INFO  [http-nio-8080-exec-9] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 15:45:40 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 406 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:45:40 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:45:40 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:46:23 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 315 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:46:23 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:46:23 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:47:06 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 317 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:47:06 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:47:06 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:47:50 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 318 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:47:50 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:47:50 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:48:32 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 315 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:48:32 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:48:32 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:49:15 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 319 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:49:15 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:49:15 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:49:59 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 313 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:49:59 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:49:59 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:50:42 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 320 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:50:42 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:50:42 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:51:25 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 313 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:51:25 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:51:25 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:52:08 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 317 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:52:08 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:52:08 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:52:49 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 322 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:52:49 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:52:49 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:53:31 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 312 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:53:31 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:53:31 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:54:12 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 319 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:54:12 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:54:12 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:54:55 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 317 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:54:55 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:54:55 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:55:38 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 331 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:55:38 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:55:38 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:56:17 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 312 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:56:18 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:56:18 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:56:43 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 17696 (C:\Users\systemi\Documents\Work\IIBC\project\spdataservice\build\classes\java\main started by systemi in C:\Users\systemi\Documents\Work\IIBC\project\spdataservice)
+2023/11/14 15:56:43 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:56:43 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:57:03 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 317 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:57:03 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:57:03 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:57:44 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 316 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:57:44 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:57:44 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:58:24 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 318 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:58:24 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:58:24 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:59:05 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 320 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:59:05 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:59:05 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 15:59:45 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 317 (/app/build/classes/java/main started by root in /app)
+2023/11/14 15:59:45 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 15:59:45 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:00:28 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 317 (/app/build/classes/java/main started by root in /app)
+2023/11/14 16:00:28 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:00:28 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:00:29 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 24124 (C:\Users\systemi\Documents\Work\IIBC\project\spdataservice\build\classes\java\main started by systemi in C:\Users\systemi\Documents\Work\IIBC\project\spdataservice)
+2023/11/14 16:00:29 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:00:29 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:00:33 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 57] Started SpdataserviceApplication in 5.073 seconds (process running for 5.731)
+2023/11/14 16:01:31 INFO  [http-nio-8080-exec-1] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 16:01:38 INFO  [http-nio-8080-exec-9] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 16:01:44 INFO  [http-nio-8080-exec-3] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 16:01:56 INFO  [http-nio-8080-exec-9] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 16:04:42 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 16548 (C:\Users\systemi\Documents\Work\IIBC\project\spdataservice\build\classes\java\main started by systemi in C:\Users\systemi\Documents\Work\IIBC\project\spdataservice)
+2023/11/14 16:04:42 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:04:42 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:05:27 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 318 (/app/build/classes/java/main started by root in /app)
+2023/11/14 16:05:27 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:05:27 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:06:07 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 315 (/app/build/classes/java/main started by root in /app)
+2023/11/14 16:06:07 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:06:07 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:06:46 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 318 (/app/build/classes/java/main started by root in /app)
+2023/11/14 16:06:46 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:06:47 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:07:51 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 27192 (C:\Users\systemi\Documents\Work\IIBC\project\spdataservice\build\classes\java\main started by systemi in C:\Users\systemi\Documents\Work\IIBC\project\spdataservice)
+2023/11/14 16:07:51 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:07:51 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:07:55 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 57] Started SpdataserviceApplication in 4.747 seconds (process running for 5.505)
+2023/11/14 16:12:17 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 27832 (C:\Users\systemi\Documents\Work\IIBC\project\spdataservice\build\classes\java\main started by systemi in C:\Users\systemi\Documents\Work\IIBC\project\spdataservice)
+2023/11/14 16:12:17 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:12:17 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:12:21 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 57] Started SpdataserviceApplication in 5.356 seconds (process running for 6.148)
+2023/11/14 16:12:48 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 51] Starting SpdataserviceApplication using Java 21.0.1 with PID 320 (/app/build/classes/java/main started by root in /app)
+2023/11/14 16:12:48 DEBUG [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 52] Running with Spring Boot v3.1.5, Spring v6.0.13
+2023/11/14 16:12:48 INFO  [restartedMain] c.i.s.SpdataserviceApplication [SpringApplication.java : 644] The following 1 profile is active: "dev"
+2023/11/14 16:13:25 INFO  [restartedMain] c.i.s.SpdataserviceApplication [StartupInfoLogger.java : 57] Started SpdataserviceApplication in 44.711 seconds (process running for 48.391)
+2023/11/14 16:14:09 INFO  [http-nio-8080-exec-1] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 16:14:24 INFO  [http-nio-8080-exec-7] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 16:14:33 INFO  [http-nio-8080-exec-2] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
+2023/11/14 16:14:41 INFO  [http-nio-8080-exec-8] c.iibc.spdataservice.HomeController [HomeController.java : 24] ログテスト
