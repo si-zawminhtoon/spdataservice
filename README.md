@@ -1,3 +1,5 @@
+image::https://github.com/si-zawminhtoon/spdataservice/workflows/CI/badge.svg[link=https://github.com/si-zawminhtoon/spdataservice/actions?query=workflow%3ACI]
+
 # SPデータサービス
 機能確認用調査
 
