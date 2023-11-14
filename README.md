@@ -1,4 +1,5 @@
 image::https://github.com/si-zawminhtoon/spdataservice/workflows/CI/badge.svg[link=https://github.com/si-zawminhtoon/spdataservice/actions?query=workflow%3ACI]
+![example event parameter](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?event=push)
 
 # SPデータサービス
 機能確認用調査
