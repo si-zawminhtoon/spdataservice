@@ -1,4 +1,3 @@
-![example event parameter](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?event=push)
 ![https://github.com/si-zawminhtoon/spdataservice/actions?query=workflow:CI](https://github.com/si-zawminhtoon/spdataservice/actions/workflows/continuous-integration-workflow.yml/badge.svg?event=push)
 
 # SPデータサービス
