@@ -3,37 +3,34 @@ version: '3.8'
 services:
   #service 1: mysqlデータベースの定義
   db:
-      build:
-        context: ./db
-        args:
-          DEVELOPER_UID: $DEVELOPER_UID
-      container_name: spdataservices_dev_db_$BRANCH_NAME
-      ports:
-        - "3306:3306"
-      environment:
-        TZ: 'Asia/Tokyo'
-      # volumes:
-        # - ./db/lib/:/var/lib/mysql
-        # - ./db/conf/my.cnf:/etc/my.cnf
-      restart: always
+    build:
+      context: ./db
+      args:
+        DEVELOPER_UID: $DEVELOPER_UID
+    container_name: spdataservices_dev_db_$BRANCH_NAME
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: 'Asia/Tokyo'
+    restart: always
 
   #service 2: アプリケーションの定義
   app:
-      build: 
-        context: ./
-        args:
-          DEVELOPER_UID: $DEVELOPER_UID
-      container_name: spdataservices_dev_app_$BRANCH_NAME
-      volumes:
-        - ./logs/:/app/logs/
-      environment:
-        TZ: 'Asia/Tokyo'
-        SPRING_PROFILES_ACTIVE: $SPRING_PROFILES_ACTIVE
-        MYSQL_HOST: spdataservices_dev_db_$BRANCH_NAME
-      expose:
-        - "8080"
-      ports:
-        - "8081:8080"
-      depends_on:
-        - db
-      restart: always
+    build:
+      context: ./
+      args:
+        DEVELOPER_UID: $DEVELOPER_UID
+    container_name: spdataservices_dev_app_$BRANCH_NAME
+    volumes:
+      - ./:/app/
+    environment:
+      TZ: 'Asia/Tokyo'
+      SPRING_PROFILES_ACTIVE: $SPRING_PROFILES_ACTIVE
+      MYSQL_HOST: spdataservices_dev_db_$BRANCH_NAME
+    expose:
+      - "8080"
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    restart: always
