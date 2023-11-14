@@ -1,4 +1,5 @@
-FROM mysql:8.0.28
+# FROM mysql:8.0.28
+FROM hoshinotsuyoshi/mysql:5.7.12
 
 COPY ./conf/my.cnf /etc/my.cnf
 
