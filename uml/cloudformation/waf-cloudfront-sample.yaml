@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for AWS WAF with CloudFront
+
+Parameters:
+  WebACLName:
+    Type: String
+    Description: Name for the WAF WebACL
+    Default: MyWebACL
+
+  CloudFrontDistributionName:
+    Type: String
+    Description: Name for the CloudFront distribution
+    Default: MyCloudFrontDistribution
+
+Resources:
+  WAFWebACL:
+    Type: 'AWS::WAFv2::WebACL'
+    Properties:
+      Name: !Ref WebACLName
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      Rules:
+        - Action:
+            Block: {}
+          Priority: 1
+          RuleAction: Block
+          RuleDefinition:
+            Statements:
+              - Action:
+                  Block: {}
+                ByteMatchStatement:
+                  FieldToMatch:
+                    AllQueryArguments: {}
+                  TextTransformations:
+                    - Priority: 0
+                      Type: NONE
+                  PositionalConstraint: EXACTLY
+                  SearchString: "example.com"
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: MyWebACLMetrics
+
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: example-s3-bucket.s3.amazonaws.com  # Replace with your S3 bucket or origin
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        Enabled: true
+        Comment: CloudFront distribution protected by WAF
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: true
+        Aliases:
+          - example.com  # Replace with your custom domain
+        WebACLId: !Ref WAFWebACL
+
+Outputs:
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution

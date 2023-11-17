@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for Amazon Aurora MySQL 5.7 DB Cluster
+
+Parameters:
+  DBClusterIdentifier:
+    Type: String
+    Description: The name of the Aurora DB cluster
+    Default: MyAuroraDBCluster
+
+  MasterUsername:
+    Type: String
+    Description: The master username for the Aurora DB cluster
+    Default: admin
+
+  MasterUserPassword:
+    Type: String
+    NoEcho: true
+    Description: The master user password for the Aurora DB cluster
+
+  InstanceType:
+    Type: String
+    Description: The DB instance class for the Aurora DB cluster
+    Default: db.r5.large
+
+  ReplicaCount:
+    Type: Number
+    Description: The number of Aurora DB replicas
+    Default: 1
+
+Resources:
+  AuroraDBCluster:
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      Engine: aurora
+      EngineVersion: 5.7.12
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      DBClusterIdentifier: !Ref DBClusterIdentifier
+      Port: 3306
+      DBSubnetGroupName: default-vpc-xxxxxxxx  # Specify your DB subnet group
+      VpcSecurityGroupIds: 
+        - sg-xxxxxxxx  # Specify your security group ID
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: "07:00-09:00"
+      AvailabilityZones:
+        - us-east-1a  # Specify your preferred availability zone
+        - us-east-1b  # Specify another preferred availability zone
+
+  AuroraDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceIdentifier: !Ref DBClusterIdentifier
+      DBClusterIdentifier: !Ref DBClusterIdentifier
+      Engine: aurora
+      EngineVersion: 5.7.12
+      DBInstanceClass: !Ref InstanceType
+
+Outputs:
+  AuroraDBClusterEndpoint:
+    Description: The endpoint of the Aurora DB cluster
+    Value: !GetAtt AuroraDBCluster.Endpoint

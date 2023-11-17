@@ -1,0 +1,105 @@
+  #########################################################################################
+  # ????????(us-east-1)?????????
+  # Cloudfront??????Cloudfront??????????????????
+  #########################################################################################
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloudfront-WAF Set up.
+
+  #########################################################################################
+  # ??????????
+  #########################################################################################
+
+Parameters:
+
+  ###################################################################
+  # ???????
+  ###################################################################
+
+  # ????????
+  Service:
+    Type: String
+  # ????
+  Environment:
+    Type: String
+  # ???????
+  Region:
+    Type: String
+    # ???????????
+  AvailabilityZone1a:
+    Type: String
+  # ???????????
+  AvailabilityZone1c:
+    Type: String
+    
+  #########################################################################################
+  # ?????????
+  #########################################################################################
+Resources:
+
+  ###################################################################
+  # Cloudfront-WAF ??
+  ###################################################################
+
+  BpfMyhlCloudfrontWebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Scope: CLOUDFRONT
+      Description: Myhl WebACL for Cloudfront
+      Name: !Sub bpf-${Environment}-${Service}-cloudfront-webacl
+      #??????????????????
+      DefaultAction:
+        Allow: {}
+        #Block: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub bpf-${Environment}-${Service}-cloudfront-webacl
+      #????????????
+      Rules: 
+        - Name: !Sub bpf-${Environment}-${Service}-cloudfront-webacl-rule
+          Action:
+              Allow: {}
+          Priority: 0
+          Statement:
+            IPSetReferenceStatement:
+              Arn: !GetAtt BpfMyhlCloudfrontWafIpSet.Arn
+          VisibilityConfig:
+            SampledRequestsEnabled: true     
+            CloudWatchMetricsEnabled: true       
+            MetricName: !Sub bpf-${Environment}-${Service}-cloudfront-webacl-rule
+      Tags: 
+        - Key: Name
+          Value: !Sub bpf-${Environment}-${Service}-cloudfront-webacl
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+  #????????IP???????
+  BpfMyhlCloudfrontWafIpSet:
+    Type: AWS::WAFv2::IPSet
+    Properties: 
+      Addresses: 
+        - 1.1.1.1/32 #????????IP???????
+      Description: IP set for Myhl Cloudfront
+      IPAddressVersion: IPV4
+      Name: !Sub bpf-${Environment}-${Service}-cloudfront-webacl-ipset
+      Scope: CLOUDFRONT
+      Tags: 
+        - Key: Name
+          Value: !Sub bpf-${Environment}-${Service}-cloudfront-webacl-ipset
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  #################################################
+  # Output(????????)
+  #################################################
+
+Outputs:
+
+  CloudfrontWebAcl:
+      Value: !Ref BpfMyhlCloudfrontWebAcl
+      Export:
+        Name: BpfMyhlCloudfrontWebAclStack

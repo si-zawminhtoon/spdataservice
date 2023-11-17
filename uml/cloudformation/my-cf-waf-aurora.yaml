@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  spdataservice - CloudFront Set up.
+Parameters:
+  # # アカウントID
+  # AccountId:
+  #   Type: String
+  # サービス
+  Service:
+    Type: String
+    Default: spdataservice
+  # 環境
+  Environment:
+    Type: String
+    Default: Dev
+  # ???? ???
+  environment:
+    Type: String
+    Default: dev
+  # ?????????????ACM????cloudfront??
+  VirginiaAcm:
+    Type: String
+    Default: arn:aws:acm:us-east-1:000323109652:certificate/0e08b3f1-80b1-4236-b225-fb183f76a4f3
+  # Web Admin Cloudfront?????????
+  WebAdminCloudfrontCustomDnsName:
+    Type: String
+    Default: ppgm.mnpp.b-sysi.com
+  # ALB?????????
+  WebAdminAlbCustomDnsName:
+    Type: String
+    Default: admin-alb.ppgm.mnpp.b-sysi.com
+
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub "Created by ${AWS::StackName}"
+        DefaultCacheBehavior:
+          TargetOriginId: fargateOrigin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: "none"
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          OriginRequestPolicyId: acba4595-bd28-49b8-b9fe-13317c0390fa # UserAgentRefererHeaders
+          Compress: true
+        DefaultRootObject: index.html
+        Enabled: true
+        PriceClass: !Ref CloudFrontPriceClass
+        Origins:
+          - DomainName: !Sub ${FargateDNS}.s3.amazonaws.com
+            Id: fargateOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Description: !Sub "OAC of ${FargateDNS}. Created by ${AWS::StackName}"
+        Name: !Sub "OAC-${FargateDNS}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+Outputs:
+  CloudfrontDomainName:
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudfrontDomainName"

@@ -1,0 +1,286 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Aurora MySQL create
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Project Name Prefix"
+        Parameters:
+          - PJPrefix
+      - Label:
+          default: "Environment Prefix"
+        Parameters:
+          - EnvName
+      - Label:
+          default: "Aurora Configuration"
+        Parameters:
+          - DBInstanceName
+          - DBMasterUserName
+          - DBMasterUserPassword
+          - DBInstanceType
+          - PreferredBackupWindow
+          - PreferredMaintenanceWindow
+          - BackupRetentionPeriod
+          - EnableMultiAz
+          - DBSnapshotArn
+    ParameterLabels:
+      DBInstanceName:
+        default: "Database Instance Name"
+      DBMasterUserName:
+        default: "Database Master User Name"
+      DBMasterUserPassword:
+        default: "Database Master User Password"
+      DBInstanceType:
+        default: "Database Instance Type"
+      PreferredBackupWindow:
+        default: "Preferred Backup Window"
+      PreferredMaintenanceWindow:
+        default: "Preferred Maintenance Window"
+      EnableMultiAz:
+        default: "Enable Multi Availability Zone"
+      DBSnapshotArn:
+        default: "Database Snapshot Arn"
+
+Parameters:
+  PJPrefix:
+    Type: String
+    Default: "tokico-test"
+
+  EnvName:
+    Description: "Please select the environment you want to create. Besides, its name will be prefixed to all resources' name."
+    Type: String
+    Default: dev1
+
+  DBInstanceName:
+    Type: String
+    Default: "rds"
+
+  DBMasterUserName:
+    Description: "Please enter the name of the master user on an RDS."
+    Type: String
+    Default: "dbuser"
+    NoEcho: true
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: "must begin with a letter and contain only alphanumeric characters."
+
+  DBMasterUserPassword:
+    Description: Please enter the password of the master user on an RDS. That should be greater or equal to 8 characters.
+    Default: "dbpassword"
+    NoEcho: true
+    Type: String
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: "must contain only alphanumeric characters."
+
+  DBInstanceType:
+    Type: String
+    Default: "db.t4g.medium"
+    AllowedValues:
+      - "db.r5.12xlarge"
+      - "db.r5.16xlarge"
+      - "db.r5.24xlarge"
+      - "db.r5.2xlarge"
+      - "db.r5.4xlarge"
+      - "db.r5.8xlarge"
+      - "db.r5.large"
+      - "db.r5.xlarge"
+      - "db.r6g.12xlarge"
+      - "db.r6g.16xlarge"
+      - "db.r6g.2xlarge"
+      - "db.r6g.4xlarge"
+      - "db.r6g.8xlarge"
+      - "db.r6g.large"
+      - "db.r6g.xlarge"
+      - "db.r6i.12xlarge"
+      - "db.r6i.16xlarge"
+      - "db.r6i.24xlarge"
+      - "db.r6i.2xlarge"
+      - "db.r6i.32xlarge"
+      - "db.r6i.4xlarge"
+      - "db.r6i.8xlarge"
+      - "db.r6i.large"
+      - "db.r6i.xlarge"
+      - "db.serverless"
+      - "db.t3.large"
+      - "db.t3.medium"
+      - "db.t4g.large"
+      - "db.t4g.medium"
+
+  PreferredBackupWindow:
+    Description: "In UTC"
+    Type: String
+    Default: 18:00-19:00
+
+  PreferredMaintenanceWindow:
+    Description: "In UTC"
+    Type: String
+    Default: "sun:19:30-sun:20:00"
+
+  BackupRetentionPeriod:
+    Description: "Days before backup deletion, 3 for dev and 15 for prod"
+    Type: Number
+    Default: 3
+
+  EnableMultiAz:
+    Description: Decide whether the Aurora Cluster has a single instance or 2 instances.
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+  DBSnapshotArn:
+    Description: If you want to create an Aurora Cluster from your snapshot, please enter your Snapshot ARN. If you leave it empty, this template creates a brand new Aurora Cluster.
+    Type: String
+
+Conditions:
+  isBrandNewDB: !Equals [ !Ref DBSnapshotArn, "" ]
+  enableMultiAz: !Equals [ !Ref EnableMultiAz, "true" ]
+
+Resources:
+  # Parameter Groups
+  DBParameterGroup:
+    Type: "AWS::RDS::DBParameterGroup"
+    Properties:
+      Description: "RDS DB parameter group the Aurora Cluster's instance(s)."
+      Family: "aurora-mysql8.0"
+      Parameters:
+        max_connections: "1000"
+
+  DBClusterParameterGroup:
+    Type: "AWS::RDS::DBClusterParameterGroup"
+    Properties:
+      Description: "RDS DB cluster parameter group for Hub-Amber"
+      Family: "aurora-mysql8.0"
+      Parameters:
+        character_set_client: "utf8mb4"
+        character_set_connection: "utf8mb4"
+        character_set_database: "utf8mb4"
+        character_set_filesystem: "utf8mb4"
+        character_set_results: "utf8mb4"
+        character_set_server: "utf8mb4"
+        collation_connection: "utf8mb4_bin"
+        collation_server: "utf8mb4_bin"
+        skip-character-set-client-handshake: 1
+        time_zone: "UTC"
+
+  # Aurora
+  DBSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: "RDS subnet group."
+      SubnetIds:
+        - Fn::ImportValue: !Sub "${PJPrefix}-private-subnet-a"
+        - Fn::ImportValue: !Sub "${PJPrefix}-private-subnet-c"
+
+  DBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId: { "Fn::ImportValue": !Sub "${PJPrefix}-vpc" }
+      GroupName: !Sub "${PJPrefix}-${DBInstanceName}-sg"
+      GroupDescription: "-"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${PJPrefix}-${DBInstanceName}-sg"
+      # Rule
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: { "Fn::ImportValue": !Sub "${PJPrefix}-vpc-cidr" }
+
+  DBCluster:
+    Type: "AWS::RDS::DBCluster"
+    DeletionPolicy: "Snapshot"
+    Properties:
+      Engine: "aurora-mysql"
+      EngineVersion: "8.0.mysql_aurora.3.02.0"
+      SnapshotIdentifier: !If [isBrandNewDB, !Ref "AWS::NoValue", !Ref DBSnapshotArn ]
+      DBClusterIdentifier: !Sub "${EnvName}-${PJPrefix}-cluster"
+      MasterUsername: !If [isBrandNewDB, !Ref DBMasterUserName, !Ref "AWS::NoValue" ]
+      MasterUserPassword: !If [isBrandNewDB, !Ref DBMasterUserPassword, !Ref "AWS::NoValue" ]
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      PreferredBackupWindow: !Ref PreferredBackupWindow
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      VpcSecurityGroupIds:
+        - !Ref DBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvName}-${PJPrefix}-cluster"
+        - Key: Env
+          Value: !Ref EnvName
+        - Key: Service
+          Value: !Ref PJPrefix
+        - Key: Role
+          Value: Datastore
+
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      # Disabled as cause failure on updating stack
+      # DBInstanceIdentifier: !Sub "${EnvName}-${PJPrefix}-${DBInstanceName}-instance1"
+      Engine: aurora-mysql
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceType
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvName}-${PJPrefix}-${DBInstanceName}-instance1"
+        - Key: Env
+          Value: !Ref EnvName
+        - Key: Service
+          Value: !Ref PJPrefix
+        - Key: Role
+          Value: Datastore
+
+  DBInstance2:
+    Type: AWS::RDS::DBInstance
+    Condition: enableMultiAz
+    Properties:
+      # Disabled as cause failure on updating stack
+      # DBInstanceIdentifier: !Sub "${EnvName}-${PJPrefix}-${DBInstanceName}-instance2"
+      Engine: aurora-mysql
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceType
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvName}-${PJPrefix}-${DBInstanceName}-instance2"
+        - Key: Env
+          Value: !Ref EnvName
+        - Key: Service
+          Value: !Ref PJPrefix
+        - Key: Role
+          Value: Datastore
+
+Outputs:
+  DBCluster:
+    Description: "An Aurora(MySQL) Cluster"
+    Value: !Ref DBCluster
+    Export:
+      Name: !Sub "${EnvName}-${PJPrefix}-cluster"
+
+  DNSName:
+    Description: "The connection endpoint for the DB cluster."
+    Value: !GetAtt DBCluster.Endpoint.Address
+    Export:
+      Name: !Sub '${PJPrefix}-${DBInstanceName}-dnsname'
+
+  ReadDNSName:
+    Description: "The reader endpoint for the DB cluster."
+    Value: !GetAtt 'DBCluster.ReadEndpoint.Address'
+    Export:
+      Name: !Sub '${PJPrefix}-${DBInstanceName}-read-dnsname'
+
+  SecurityGroupId:
+    Description: "The security group used to manage access to RDS Aurora Serverless."
+    Value: !Ref DBSecurityGroup
+    Export:
+      Name: !Sub "${PJPrefix}-${DBInstanceName}-sg"

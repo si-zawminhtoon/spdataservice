@@ -1,66 +1,78 @@
 AWSTemplateFormatVersion: 2010-09-09
+Description: "VPCテンプレート"
 
 Parameters:
-  ContainerSecurityGroup:
-    Type: String
-
   PJPrefix:
     Type: String
 
-  VpcSubnet:
+  AvailabilityZone1:
     Type: String
 
-  TaskCpu:
-    Type: Number
+  VpcCidrBlock:
+    Description: "VPCのCIDRブロック"
+    Type: String
+    Default: "10.0.0.0/16"
 
-  TaskMemory:
+  VpcSubnetCidr:
+    Description: "VPC SubnetのCIDRブロック"
+    Type: String
+    Default: "10.0.0.0/24"
+
+  HTTPPort:
     Type: Number
 
 Resources:
-  Cluster:
-    Type: AWS::ECS::Cluster
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
     Properties:
-      ClusterName: !Sub "${PJPrefix}-cluster"
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsSupport: true
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${PJPrefix}-vpc"
 
-  FargateService:
-    Type: AWS::ECS::Service
-    Properties:
-      Cluster: !Sub "${PJPrefix}-cluster"
-      LaunchType: FARGATE
-      TaskDefinition: !Ref FargateTask
-      DesiredCount: 1
-      ServiceName: !Sub "${PJPrefix}-service"
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          Subnets:
-            - !Ref VpcSubnet
-          SecurityGroups:
-            - !Ref ContainerSecurityGroup
+  # Internet Gateway
+  IGW:
+    Type: AWS::EC2::InternetGateway
 
-  FargateTask:
-    Type: AWS::ECS::TaskDefinition
+  # Internet Gateway Attachment
+  IGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      Family: FargateTask
-      NetworkMode: awsvpc
-      RequiresCompatibilities:
-        - FARGATE
-      Cpu: !Ref TaskCpu
-      Memory: !Ref TaskMemory
-      ContainerDefinitions:
-        - Image: nginx:latest
-          Name: !Sub "${PJPrefix}-task-container"
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
 
-  FargateTaskExecutionRole:
-    Type: AWS::IAM::Role
+  # VPC Subnet
+  VpcSubnet:
+    Type: AWS::EC2::Subnet
     Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
-            Action:
-              - sts:AssumRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      AvailabilityZone: !Sub "${AWS::Region}${AvailabilityZone1}"
+      VpcId: !Ref VPC
+      CidrBlock: !Ref VpcSubnetCidr
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${PJPrefix}-vpcsubnet"
+
+  # Security Group
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${PJPrefix}-ServiceSecurityGroup"
+      GroupDescription: Allow HTTP.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPPort
+          ToPort: !Ref HTTPPort
+          CidrIp: "0.0.0.0/0"
+
+Outputs:
+  VPC:
+    Value: !Ref VPC
+
+  VpcSubnet:
+    Value: !Ref VpcSubnet
+
+  ContainerSecurityGroup:
+    Value: !Ref ContainerSecurityGroup
