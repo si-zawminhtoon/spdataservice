@@ -1,0 +1,16 @@
+@startuml
+
+participant localhost
+participant dev_auth0
+participant auth0
+participant google
+
+localhost -> dev_auth0  : Click Login link
+dev_auth0 -> google : Authenticate
+google -> auth0 : login:Callback
+auth0 -> dev_auth0 : login:Callback
+dev_auth0 -> dev_auth0 : Authorize
+dev_auth0 -> localhost : login:Callback
+
+
+@enduml
