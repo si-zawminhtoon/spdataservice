@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  spdataservice - Web-App-ECS Set up.
+
+Parameters:
+  ContainerSecurityGroup:
+    Type: String
+
+  Service:
+    Type: String
+    Default: spdataservice
+
+  SERVICE:
+    Type: String
+    Default: SPDATASERVICE
+
+  environment:
+    Type: String
+    Default: dev
+
+  ENVIRONMENT:
+    Type: String
+    Default: DEV
+  # 1a
+  PriSub1a:
+    Type: String
+    Default: subnet-0f996803098fd0487
+  envId:
+    AllowedValues: ["spds01", "spds02"]
+    Type: String
+    Default: spds01
+
+  VpcSubnet:
+    Type: String
+
+  TaskCpu:
+    Type: Number
+
+  TaskMemory:
+    Type: Number
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${Service}-cluster"
+
+  FargateService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Sub "${Service}-cluster"
+      LaunchType: FARGATE
+      TaskDefinition: !Ref FargateTask
+      DesiredCount: 1
+      ServiceName: !Sub "${Service}-service"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref VpcSubnet
+          SecurityGroups:
+            - !Ref ContainerSecurityGroup
+
+  FargateTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: FargateTask
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: !Ref TaskCpu
+      Memory: !Ref TaskMemory
+      ContainerDefinitions:
+        - Image: amazoncorretto:21
+          Name: !Sub "${envId}-${environment}-${Service}-web-app-container"
+
+  FargateTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
