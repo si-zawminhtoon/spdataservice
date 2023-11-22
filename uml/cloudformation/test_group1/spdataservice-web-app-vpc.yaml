@@ -1,0 +1,309 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Spdataservice - VPC Set up.
+Parameters:
+  Service:
+    Type: String
+    Default: spds01
+  Environment:
+    Type: String
+    Default: dev
+  Envtag:
+    Type: String
+    Default: Dev
+  envId:
+    AllowedValues: ["spds01", "spds02"]
+    Type: String
+    Default: spds01
+  AvailabilityZone1a:
+    Type: String
+    Default: ap-northeast-1a
+  AvailabilityZone1c:
+    Type: String
+    Default: ap-northeast-1c
+
+  VpcCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+  PublicSubnet1CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+  PublicSubnet2CIDR:
+    Type: String
+    Default: 10.0.2.0/24
+
+  TrafficType:
+    Type: String
+    Default: ALL  ### VPC????? ACCEPT | ALL | REJECT ??????
+  VPCFlowLogS3Bucket:
+    Type: String
+    Default: spds01-dev-vpc-flowlog-bucket
+  RetentionInDays:
+    Type: String
+    Default: 60
+  HTTPPort:
+    Type: Number
+    Default: 8080
+
+
+Resources: 
+
+# VPC??
+
+  Spds01DevVpc: 
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: 
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-vpc
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag 
+
+#####VPC Log######
+
+#   Spds01DevVPCFlowLogs:
+#     Type: "AWS::EC2::FlowLog"
+#     Properties:
+# #      LogDestination: !Ref VPCFlowLogS3Bucket
+#       LogDestinationType: cloud-watch-logs
+#       ResourceId: !Ref Spds01DevVpc
+#       ResourceType: "VPC"
+#       TrafficType: !Ref TrafficType  ### ACCEPT | ALL | REJECT ??????
+#       DeliverLogsPermissionArn: !GetAtt VpcFlowLogsIamRole.Arn
+#       LogGroupName: !Ref VpcFlowLogsLogGroup
+
+
+#   VpcFlowLogsIamRole:
+#   #--------------------------------------------------------------------
+#     Type: "AWS::IAM::Role"
+#     Properties:
+#       RoleName: !Sub ${envId}-${Environment}-vpc-flowlogs-role
+#       AssumeRolePolicyDocument:
+#         Version: "2012-10-17"
+#         Statement:
+#           - Effect: Allow
+#             Principal:
+#               Service:
+#                 - "vpc-flow-logs.amazonaws.com"
+#             Action:
+#                 - "sts:AssumeRole"
+#       Policies:
+#         - PolicyName: !Sub ${envId}-${Environment}-vpc-flowlogs-policy
+#           PolicyDocument:
+#             Version: "2012-10-17"
+#             Statement:
+#               - Effect: Allow
+#                 Action:
+#                   - "logs:CreateLogGroup"
+#                   - "logs:CreateLogStream"
+#                   - "logs:PutLogEvents"
+#                   - "logs:DescribeLogGroups"
+#                   - "logs:DescribeLogStreams"
+#                 Resource: "*"
+
+
+# #--------------------------------------------------------------------
+#   VpcFlowLogsLogGroup:
+# #--------------------------------------------------------------------
+#     Type: "AWS::Logs::LogGroup"
+#     Properties:
+#       LogGroupName: !Sub ${envId}-${Environment}-vpc-flowlogs
+#       RetentionInDays: !Ref RetentionInDays
+
+# Subnet
+  Spds01DevPubSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Spds01DevVpc
+      CidrBlock: !Ref PublicSubnet1CIDR
+      AvailabilityZone: !Ref AvailabilityZone1a
+      MapPublicIpOnLaunch: true
+      Tags: 
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-public-subnet01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+  Spds01DevPubSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Spds01DevVpc
+      CidrBlock: !Ref PublicSubnet2CIDR
+      AvailabilityZone: !Ref AvailabilityZone1c
+      MapPublicIpOnLaunch: true
+      Tags: 
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-public-subnet02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
+
+  #################################################
+  # InternetGateway
+  #################################################
+
+  Spds01DevInternetGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-igw
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+  Spds01DevInternetGWAtt:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Spds01DevVpc
+      InternetGatewayId: !Ref Spds01DevInternetGW
+
+
+  #################################################
+  # NatGateway
+  #################################################
+
+  Spds01DevNatGW1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt Spds01DevNatGW1EIP.AllocationId
+      SubnetId: !Ref Spds01DevPubSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-natgw01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+  Spds01DevNatGW1EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref Spds01DevVpc
+
+
+  Spds01DevNatGW2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt Spds01DevNatGW2EIP.AllocationId
+      SubnetId: !Ref Spds01DevPubSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-natgw02
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+
+  Spds01DevNatGW2EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref Spds01DevVpc
+
+  ###################################################################
+  # RouteTable
+  ###################################################################
+
+  Spds01DevPubRtb:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Spds01DevVpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-public-rtb01
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Envtag
+    DependsOn: Spds01DevInternetGWAtt
+
+
+  Spds01DevPubRouteIgw:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref Spds01DevPubRtb
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Spds01DevInternetGW
+    DependsOn: Spds01DevInternetGWAtt
+
+
+  Spds01DevSubnet1PubRtbAss:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Spds01DevPubSubnet1
+      RouteTableId: !Ref Spds01DevPubRtb
+
+
+  Spds01DevSubnet2PubRtbAss:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Spds01DevPubSubnet2
+      RouteTableId: !Ref Spds01DevPubRtb
+
+# ##############################################################
+# ## VPC SecurityGroup
+# ######################################################
+
+  Spds01DevVpcSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Allow HTTP inbound traffic to public instances'
+      VpcId: !Ref Spds01DevVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPPort
+          ToPort: !Ref HTTPPort
+          CidrIp: "0.0.0.0/0"
+
+  Spds01DevALB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: Spds01DevALB
+      Subnets:
+        - !Ref Spds01DevPubSubnet1
+        - !Ref Spds01DevPubSubnet2
+      SecurityGroups:
+        - !Ref Spds01DevVpcSG
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+
+Outputs:
+
+  Spds01DevVpcOutput:
+    Value: !Ref Spds01DevVpc
+    Export:
+      Name: Spds01DevVpc
+
+  Spds01DevPubSubnet1Output:
+    Value: !Ref Spds01DevPubSubnet1
+    Export:
+      Name: Spds01DevPubSubnet1
+
+  Spds01DevPubSubnet2Output:
+    Value: !Ref Spds01DevPubSubnet2
+    Export:
+      Name: Spds01DevPubSubnet2
+
+  Spds01DevPubRtbOutput:
+    Value: !Ref Spds01DevPubRtb
+    Export:
+      Name: Spds01DevPubRtb
+
+  Spds01DevVpcSGOutput:
+    Value: !Ref Spds01DevVpcSG
+    Export:
+      Name: Spds01DevVpcSG
+
+  Spds01DevVpcALBOutput:
+    Description: Application Load Balancer ID
+    Value: !Ref Spds01DevALB
