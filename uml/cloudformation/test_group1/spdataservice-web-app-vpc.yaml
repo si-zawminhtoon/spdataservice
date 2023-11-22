@@ -24,10 +24,10 @@ Parameters:
   VpcCIDR:
     Type: String
     Default: 10.0.0.0/16
-  PublicSubnet1CIDR:
+  PrivateSubnet1CIDR:
     Type: String
     Default: 10.0.1.0/24
-  PublicSubnet2CIDR:
+  PrivateSubnet2CIDR:
     Type: String
     Default: 10.0.2.0/24
 
@@ -47,7 +47,9 @@ Parameters:
 
 Resources: 
 
-# VPC??
+# ##################################################
+# ## VPC
+# ##################################################
 
   Spds01DevVpc: 
     Type: AWS::EC2::VPC
@@ -63,91 +65,38 @@ Resources:
         - Key: Environment
           Value: !Ref Envtag 
 
-#####VPC Log######
-
-#   Spds01DevVPCFlowLogs:
-#     Type: "AWS::EC2::FlowLog"
-#     Properties:
-# #      LogDestination: !Ref VPCFlowLogS3Bucket
-#       LogDestinationType: cloud-watch-logs
-#       ResourceId: !Ref Spds01DevVpc
-#       ResourceType: "VPC"
-#       TrafficType: !Ref TrafficType  ### ACCEPT | ALL | REJECT ??????
-#       DeliverLogsPermissionArn: !GetAtt VpcFlowLogsIamRole.Arn
-#       LogGroupName: !Ref VpcFlowLogsLogGroup
-
-
-#   VpcFlowLogsIamRole:
-#   #--------------------------------------------------------------------
-#     Type: "AWS::IAM::Role"
-#     Properties:
-#       RoleName: !Sub ${envId}-${Environment}-vpc-flowlogs-role
-#       AssumeRolePolicyDocument:
-#         Version: "2012-10-17"
-#         Statement:
-#           - Effect: Allow
-#             Principal:
-#               Service:
-#                 - "vpc-flow-logs.amazonaws.com"
-#             Action:
-#                 - "sts:AssumeRole"
-#       Policies:
-#         - PolicyName: !Sub ${envId}-${Environment}-vpc-flowlogs-policy
-#           PolicyDocument:
-#             Version: "2012-10-17"
-#             Statement:
-#               - Effect: Allow
-#                 Action:
-#                   - "logs:CreateLogGroup"
-#                   - "logs:CreateLogStream"
-#                   - "logs:PutLogEvents"
-#                   - "logs:DescribeLogGroups"
-#                   - "logs:DescribeLogStreams"
-#                 Resource: "*"
-
-
-# #--------------------------------------------------------------------
-#   VpcFlowLogsLogGroup:
-# #--------------------------------------------------------------------
-#     Type: "AWS::Logs::LogGroup"
-#     Properties:
-#       LogGroupName: !Sub ${envId}-${Environment}-vpc-flowlogs
-#       RetentionInDays: !Ref RetentionInDays
-
-# Subnet
-  Spds01DevPubSubnet1:
+  Spds01DevPrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref Spds01DevVpc
-      CidrBlock: !Ref PublicSubnet1CIDR
+      CidrBlock: !Ref PrivateSubnet1CIDR
       AvailabilityZone: !Ref AvailabilityZone1a
-      MapPublicIpOnLaunch: true
       Tags: 
         - Key: Name
-          Value: !Sub ${envId}-${Environment}-public-subnet01
+          Value: !Sub ${envId}-${Environment}-private-subnet-a
         - Key: Service
           Value: !Ref Service
         - Key: Environment
           Value: !Ref Envtag
 
-  Spds01DevPubSubnet2:
+  Spds01DevPrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref Spds01DevVpc
-      CidrBlock: !Ref PublicSubnet2CIDR
+      CidrBlock: !Ref PrivateSubnet2CIDR
       AvailabilityZone: !Ref AvailabilityZone1c
-      MapPublicIpOnLaunch: true
       Tags: 
         - Key: Name
-          Value: !Sub ${envId}-${Environment}-public-subnet02
+          Value: !Sub ${envId}-${Environment}-private-subnet-c
         - Key: Service
           Value: !Ref Service
         - Key: Environment
           Value: !Ref Environment
 
-  #################################################
-  # InternetGateway
-  #################################################
+
+# ##################################################
+# ## InternetGateway
+# ##################################################
 
   Spds01DevInternetGW:
     Type: AWS::EC2::InternetGateway
@@ -167,15 +116,15 @@ Resources:
       InternetGatewayId: !Ref Spds01DevInternetGW
 
 
-  #################################################
-  # NatGateway
-  #################################################
+# ##################################################
+# ## NatGateway
+# ##################################################
 
   Spds01DevNatGW1:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt Spds01DevNatGW1EIP.AllocationId
-      SubnetId: !Ref Spds01DevPubSubnet1
+      SubnetId: !Ref Spds01DevPrivateSubnet1
       Tags:
         - Key: Name
           Value: !Sub ${envId}-${Environment}-natgw01
@@ -194,7 +143,7 @@ Resources:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt Spds01DevNatGW2EIP.AllocationId
-      SubnetId: !Ref Spds01DevPubSubnet2
+      SubnetId: !Ref Spds01DevPrivateSubnet2
       Tags:
         - Key: Name
           Value: !Sub ${envId}-${Environment}-natgw02
@@ -208,9 +157,9 @@ Resources:
     Properties:
       Domain: !Ref Spds01DevVpc
 
-  ###################################################################
-  # RouteTable
-  ###################################################################
+# ##################################################
+# ## RouteTable
+# ##################################################
 
   Spds01DevPubRtb:
     Type: AWS::EC2::RouteTable
@@ -218,13 +167,12 @@ Resources:
       VpcId: !Ref Spds01DevVpc
       Tags:
         - Key: Name
-          Value: !Sub ${envId}-${Environment}-public-rtb01
+          Value: !Sub ${envId}-${Environment}-private-rtb01
         - Key: Service
           Value: !Ref Service
         - Key: Environment
           Value: !Ref Envtag
     DependsOn: Spds01DevInternetGWAtt
-
 
   Spds01DevPubRouteIgw:
     Type: AWS::EC2::Route
@@ -234,28 +182,27 @@ Resources:
       GatewayId: !Ref Spds01DevInternetGW
     DependsOn: Spds01DevInternetGWAtt
 
-
   Spds01DevSubnet1PubRtbAss:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Spds01DevPubSubnet1
+      SubnetId: !Ref Spds01DevPrivateSubnet1
       RouteTableId: !Ref Spds01DevPubRtb
-
 
   Spds01DevSubnet2PubRtbAss:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Spds01DevPubSubnet2
+      SubnetId: !Ref Spds01DevPrivateSubnet2
       RouteTableId: !Ref Spds01DevPubRtb
 
-# ##############################################################
+
+# ##################################################
 # ## VPC SecurityGroup
-# ######################################################
+# ##################################################
 
   Spds01DevVpcSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: 'Allow HTTP inbound traffic to public instances'
+      GroupDescription: 'Allow HTTP inbound traffic to private instances'
       VpcId: !Ref Spds01DevVpc
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -268,8 +215,8 @@ Resources:
     Properties:
       Name: Spds01DevALB
       Subnets:
-        - !Ref Spds01DevPubSubnet1
-        - !Ref Spds01DevPubSubnet2
+        - !Ref Spds01DevPrivateSubnet1
+        - !Ref Spds01DevPrivateSubnet2
       SecurityGroups:
         - !Ref Spds01DevVpcSG
       Scheme: internet-facing
@@ -285,14 +232,14 @@ Outputs:
       Name: Spds01DevVpc
 
   Spds01DevPubSubnet1Output:
-    Value: !Ref Spds01DevPubSubnet1
+    Value: !Ref Spds01DevPrivateSubnet1
     Export:
-      Name: Spds01DevPubSubnet1
+      Name: Spds01DevPrivateSubnet1
 
   Spds01DevPubSubnet2Output:
-    Value: !Ref Spds01DevPubSubnet2
+    Value: !Ref Spds01DevPrivateSubnet2
     Export:
-      Name: Spds01DevPubSubnet2
+      Name: Spds01DevPrivateSubnet2
 
   Spds01DevPubRtbOutput:
     Value: !Ref Spds01DevPubRtb
