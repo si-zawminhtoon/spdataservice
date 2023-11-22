@@ -51,7 +51,7 @@ Resources:
 # ## VPC
 # ##################################################
 
-  Spds01DevVpc: 
+  VPC: 
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !Ref VpcCIDR
@@ -65,10 +65,10 @@ Resources:
         - Key: Environment
           Value: !Ref Envtag 
 
-  Spds01DevPrivateSubnet1:
+  PrivateSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref Spds01DevVpc
+      VpcId: !Ref VPC
       CidrBlock: !Ref PrivateSubnet1CIDR
       AvailabilityZone: !Ref AvailabilityZone1a
       Tags: 
@@ -79,10 +79,10 @@ Resources:
         - Key: Environment
           Value: !Ref Envtag
 
-  Spds01DevPrivateSubnet2:
+  PrivateSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref Spds01DevVpc
+      VpcId: !Ref VPC
       CidrBlock: !Ref PrivateSubnet2CIDR
       AvailabilityZone: !Ref AvailabilityZone1c
       Tags: 
@@ -98,7 +98,7 @@ Resources:
 # ## InternetGateway
 # ##################################################
 
-  Spds01DevInternetGW:
+  InternetGW:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
@@ -109,22 +109,22 @@ Resources:
         - Key: Environment
           Value: !Ref Envtag
 
-  Spds01DevInternetGWAtt:
+  InternetGWAtt:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref Spds01DevVpc
-      InternetGatewayId: !Ref Spds01DevInternetGW
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGW
 
 
 # ##################################################
 # ## NatGateway
 # ##################################################
 
-  Spds01DevNatGW1:
+  NatGW1:
     Type: AWS::EC2::NatGateway
     Properties:
-      AllocationId: !GetAtt Spds01DevNatGW1EIP.AllocationId
-      SubnetId: !Ref Spds01DevPrivateSubnet1
+      AllocationId: !GetAtt NatGW1EIP.AllocationId
+      SubnetId: !Ref PrivateSubnetA
       Tags:
         - Key: Name
           Value: !Sub ${envId}-${Environment}-natgw01
@@ -133,17 +133,16 @@ Resources:
         - Key: Environment
           Value: !Ref Envtag
 
-  Spds01DevNatGW1EIP:
+  NatGW1EIP:
     Type: AWS::EC2::EIP
     Properties:
-      Domain: !Ref Spds01DevVpc
-
+      Domain: !Ref VPC
 
   Spds01DevNatGW2:
     Type: AWS::EC2::NatGateway
     Properties:
-      AllocationId: !GetAtt Spds01DevNatGW2EIP.AllocationId
-      SubnetId: !Ref Spds01DevPrivateSubnet2
+      AllocationId: !GetAtt NatGW2EIP.AllocationId
+      SubnetId: !Ref PrivateSubnetC
       Tags:
         - Key: Name
           Value: !Sub ${envId}-${Environment}-natgw02
@@ -152,19 +151,20 @@ Resources:
         - Key: Environment
           Value: !Ref Envtag
 
-  Spds01DevNatGW2EIP:
+  NatGW2EIP:
     Type: AWS::EC2::EIP
     Properties:
-      Domain: !Ref Spds01DevVpc
+      Domain: !Ref VPC
+
 
 # ##################################################
 # ## RouteTable
 # ##################################################
 
-  Spds01DevPubRtb:
+  PrivateRtb:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref Spds01DevVpc
+      VpcId: !Ref VPC
       Tags:
         - Key: Name
           Value: !Sub ${envId}-${Environment}-private-rtb01
@@ -172,85 +172,94 @@ Resources:
           Value: !Ref Service
         - Key: Environment
           Value: !Ref Envtag
-    DependsOn: Spds01DevInternetGWAtt
+    DependsOn: InternetGWAtt
 
-  Spds01DevPubRouteIgw:
+  PrivateRouteIgw:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref Spds01DevPubRtb
+      RouteTableId: !Ref PrivateRtb
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref Spds01DevInternetGW
-    DependsOn: Spds01DevInternetGWAtt
+      GatewayId: !Ref InternetGW
+    DependsOn: InternetGWAtt
 
-  Spds01DevSubnet1PubRtbAss:
+  SubnetAPrivateRtbAss:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Spds01DevPrivateSubnet1
-      RouteTableId: !Ref Spds01DevPubRtb
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRtb
 
-  Spds01DevSubnet2PubRtbAss:
+  SubnetCPrivateRtbAss:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Spds01DevPrivateSubnet2
-      RouteTableId: !Ref Spds01DevPubRtb
+      SubnetId: !Ref PrivateSubnetC
+      RouteTableId: !Ref PrivateRtb
 
 
 # ##################################################
 # ## VPC SecurityGroup
 # ##################################################
 
-  Spds01DevVpcSG:
+  VpcSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'Allow HTTP inbound traffic to private instances'
-      VpcId: !Ref Spds01DevVpc
+      VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: !Ref HTTPPort
           ToPort: !Ref HTTPPort
           CidrIp: "0.0.0.0/0"
 
-  Spds01DevALB:
+  ALB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      Name: Spds01DevALB
       Subnets:
-        - !Ref Spds01DevPrivateSubnet1
-        - !Ref Spds01DevPrivateSubnet2
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetC
       SecurityGroups:
-        - !Ref Spds01DevVpcSG
+        - !Ref VpcSG
       Scheme: internet-facing
       LoadBalancerAttributes:
         - Key: idle_timeout.timeout_seconds
           Value: '60'
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${Environment}-ALB
 
 Outputs:
 
   Spds01DevVpcOutput:
-    Value: !Ref Spds01DevVpc
+    Value: !Ref VPC
     Export:
-      Name: Spds01DevVpc
+      Name: !Sub ${envId}-${Environment}-VPC
+
+  VPCCidr:
+    Value: !Ref VpcCIDR
+    Export:
+      Name: !Sub ${envId}-${Environment}-VPC-CIDR
 
   Spds01DevPubSubnet1Output:
-    Value: !Ref Spds01DevPrivateSubnet1
+    Value: !Ref PrivateSubnetA
     Export:
-      Name: Spds01DevPrivateSubnet1
+      Name: !Sub ${envId}-${Environment}-Private-Subnet-A
 
   Spds01DevPubSubnet2Output:
-    Value: !Ref Spds01DevPrivateSubnet2
+    Value: !Ref PrivateSubnetC
     Export:
-      Name: Spds01DevPrivateSubnet2
+      Name: !Sub ${envId}-${Environment}-Private-Subnet-C
 
   Spds01DevPubRtbOutput:
-    Value: !Ref Spds01DevPubRtb
+    Value: !Ref PrivateRtb
     Export:
-      Name: Spds01DevPubRtb
+      Name: !Sub ${envId}-${Environment}-Private-RTB
 
   Spds01DevVpcSGOutput:
-    Value: !Ref Spds01DevVpcSG
+    Value: !Ref VpcSG
     Export:
-      Name: Spds01DevVpcSG
+      Name: !Sub ${envId}-${Environment}-VPC-SG
 
   Spds01DevVpcALBOutput:
     Description: Application Load Balancer ID
-    Value: !Ref Spds01DevALB
+    Value: !Ref ALB
+    Export:
+      Name: !Sub ${envId}-${Environment}-ALB
