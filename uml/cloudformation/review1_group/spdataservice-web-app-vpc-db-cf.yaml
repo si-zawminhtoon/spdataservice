@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Spdataservice - VPC,Aurora MySQL 5.7 DB Cluster,WAF with CloudFront Set up.
+Description: Spdataservice - VPC,Aurora MySQL 5.7 DB Cluster and CloudFront Set up.
 Parameters:
   Service:
     Type: String
@@ -101,10 +101,9 @@ Parameters:
   DBSnapshotArn:
     Description: If you want to create an Aurora Cluster from your snapshot, please enter your Snapshot ARN. If you leave it empty, this template creates a brand new Aurora Cluster.
     Type: String
-  WebACLName:
+  WAFWebACLArn:
     Type: String
-    Description: Name for the WAF WebACL
-    Default: WebACL
+    Description: Id for the WAF WebACL
   CloudFrontCustomDNSName:
     Type: String
     Default: spdataservice.cloudfront.net
@@ -419,65 +418,6 @@ Resources:
         - Key: Role
           Value: Datastore
 
-# ##################################################
-# ## WAF
-# ##################################################
-
-  WAFWebACL:
-    Type: 'AWS::WAFv2::WebACL'
-    Properties:
-      Name: !Ref WebACLName
-      Scope: REGIONAL
-      DefaultAction:
-        Allow: {}
-        #Block: {}
-      VisibilityConfig:
-        SampledRequestsEnabled: true
-        CloudWatchMetricsEnabled: true
-        MetricName: !Sub ${environment}-${Service}-cloudfront-webacl
-      Rules: 
-        - Name: !Sub ${environment}-${Service}-cloudfront-webacl-rule
-          Action:
-              Allow: {}
-          Priority: 0
-          Statement:
-            IPSetReferenceStatement:
-              Arn: !GetAtt CloudfrontWafIpSet.Arn
-          VisibilityConfig:
-            SampledRequestsEnabled: true     
-            CloudWatchMetricsEnabled: true       
-            MetricName: !Sub ${environment}-${Service}-cloudfront-webacl-rule
-      Tags: 
-        - Key: Name
-          Value: !Sub ${environment}-${Service}-cloudfront-webacl
-        - Key: Service
-          Value: !Ref Service
-        - Key: Environment
-          Value: !Ref environment
-
-  CloudfrontWafIpSet:
-    Type: AWS::WAFv2::IPSet
-    Properties: 
-      Addresses: 
-        - 1.1.1.1/32
-      Description: IP set for Cloudfront
-      IPAddressVersion: IPV4
-      Name: !Sub ${environment}-${Service}-cloudfront-webacl-ipset
-      Scope: REGIONAL
-      Tags: 
-        - Key: Name
-          Value: !Sub ${environment}-${Service}-cloudfront-webacl-ipset
-        - Key: Service
-          Value: !Ref Service
-        - Key: Environment
-          Value: !Ref environment
-
-  MyWAFv2Association:
-    Type: 'AWS::WAFv2::WebACLAssociation'
-    Properties:
-      ResourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
-      WebACLArn: !Ref WAFWebACL
-
 
 # ##################################################
 # ## CloudFront
@@ -496,21 +436,20 @@ Resources:
           #     OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${WebCloudFrontOriginAccessIdentity}"
           # Origin?ALB???
           - Id: AlbOrigin
-            # Web-ALB
+            # ALB
             DomainName: !GetAtt ALB.DNSName
             CustomOriginConfig:
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
               OriginSSLProtocols: ["TLSv1.2"]
         Enabled: true
-        Comment: Web (??) Distribution
-        # DefaultRootObject: /
+        Comment: Web Distribution
+        DefaultRootObject: /
         #S3
         # Logging:
         #   #IncludeCookies: 'true'
         #   Bucket: !ImportValue S3LogDomainNameOutput
         #   Prefix: !Sub RawLogs/cloudfront/${envId}-${environment}-${Service}-web-cloudfront
-        #DefaultCacheBehavior???
         DefaultCacheBehavior:
           AllowedMethods:
             - DELETE
@@ -554,16 +493,20 @@ Resources:
             ResponseCode: 503
             ErrorCachingMinTTL: 0
         PriceClass: PriceClass_All
-        # ??????????? (us-east-1) ????????????????????
+        ###################################################################
+        # For CLOUDFRONT, you must create your WAFv2 resources in the 
+        # US East (N. Virginia) Region, us-east-1.
+        ###################################################################
         # ViewerCertificate:
         #   AcmCertificateArn: !Ref VirginiaAcm
         #   MinimumProtocolVersion: "TLSv1.2_2021"
         #   SslSupportMethod: "sni-only"
         ###################################################################
-        # ????????????????????????CloudFormation??????????(CloudFormation???)
+        # CustomDNSName
         ###################################################################
-        Aliases:
-          - !Ref CloudFrontCustomDNSName
+        # Aliases:
+        #   - !Ref CloudFrontCustomDNSName
+        WebACLId: !Ref WAFWebACLArn
       Tags:
         - Key: Name
           Value: !Sub ${envId}-${environment}-${Service}-web-cloudfront
