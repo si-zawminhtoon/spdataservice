@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for ECS with Fargate launch type
+
+Parameters:
+  VpcCIDR:
+    Type: String
+    Description: CIDR block for the VPC
+    Default: 10.0.0.0/16
+
+  PrivateSubnet1CIDR:
+    Type: String
+    Description: CIDR block for the first private subnet
+    Default: 10.0.1.0/24
+
+  PrivateSubnet2CIDR:
+    Type: String
+    Description: CIDR block for the second private subnet
+    Default: 10.0.2.0/24
+
+Resources:
+  MyVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      AvailabilityZone: us-east-1a
+
+  PrivateSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      AvailabilityZone: us-east-1b
+
+  MyCluster:
+    Type: 'AWS::ECS::Cluster'
+
+  MyTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: MyECSApp
+      ContainerDefinitions:
+        - Name: MyContainer
+          Image: nginx:latest
+          Memory: 512
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+
+  MyService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !Ref MyCluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref MyTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+          SecurityGroups:
+            - !Ref MySecurityGroup
+
+  MySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Allow inbound traffic to ECS containers'
+      VpcId: !Ref MyVPC
+
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value: !Ref MyVPC
+
+  PrivateSubnet1Id:
+    Description: Private Subnet 1 ID
+    Value: !Ref PrivateSubnet1
+
+  PrivateSubnet2Id:
+    Description: Private Subnet 2 ID
+    Value: !Ref PrivateSubnet2
+
+  ClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref MyCluster
+
+  ServiceName:
+    Description: ECS Service Name
+    Value: !Ref MyService
+
+  TaskDefinitionArn:
+    Description: ECS Task Definition ARN
+    Value: !GetAtt MyTaskDefinition.Arn

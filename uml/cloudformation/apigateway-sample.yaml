@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for API Gateway
+
+Resources:
+  MyRestApi:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: MyRestApi
+      Description: My API Gateway
+
+  MyResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref MyRestApi
+      ParentId: !GetAtt MyRestApi.RootResourceId
+      PathPart: 'myresource'
+
+  MyMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref MyRestApi
+      ResourceId: !Ref MyResource
+      HttpMethod: 'GET'
+      AuthorizationType: 'NONE'
+      Integration:
+        IntegrationHttpMethod: 'GET'
+        Type: 'HTTP'
+        Uri: 'https://api.example.com/data'
+
+  MyDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    Properties:
+      RestApiId: !Ref MyRestApi
+
+Outputs:
+  RestApiId:
+    Description: API Gateway ID
+    Value: !Ref MyRestApi
+
+  ApiEndpoint:
+    Description: Endpoint URL of the API Gateway
+    Value: !Sub 'https://${MyRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/myresource'

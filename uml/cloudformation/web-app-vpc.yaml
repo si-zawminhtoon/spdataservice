@@ -263,6 +263,20 @@ Resources:
           ToPort: !Ref HTTPPort
           CidrIp: "0.0.0.0/0"
 
+  Spds01DevALB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: Spds01DevALB
+      Subnets:
+        - !Ref Spds01DevPubSubnet1
+        - !Ref Spds01DevPubSubnet2
+      SecurityGroups:
+        - !Ref Spds01DevVpcSG
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+
 Outputs:
 
   Spds01DevVpcOutput:
@@ -289,3 +303,7 @@ Outputs:
     Value: !Ref Spds01DevVpcSG
     Export:
       Name: Spds01DevVpcSG
+
+  ALBId:
+    Description: Application Load Balancer ID
+    Value: !Ref MyALB

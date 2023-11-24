@@ -1,0 +1,76 @@
+AWS 
+使用するAWSサービスの一覧
+1.Amazon VPC
+2.Amazon ECS
+3.Amazon CloudFront
+4.AWS WAF
+5.AWS IAM
+//6.AWS Lambda
+7.Amazon API Gateway
+8.AWS CloudFormation
+
+
+11/24までにcloudformation作成
+general-in-house-aws
+に必要な権限を聞いて貰う→権限一覧に作成
+
+aurora ->
+https://docs.aws.amazon.com/AmazonRDS/latest/AuroraMySQLReleaseNotes/AuroraMySQL.Updates.20Updates.html
+
+Aurora MySQL database engine updates 2023-10-17 (version 2.11.4, compatible with MySQL 5.7.12)
+https://docs.aws.amazon.com/AmazonRDS/latest/AuroraMySQLReleaseNotes/AuroraMySQL.Updates.2114.html
+
+CloudFormationを使って以下を作成したいので権限の付与をお願いします。
+- CloudFormatiom
+- CloudFront
+- WAF
+- API Gateway
+- VPC
+- Application load balancer
+- ECS
+- Fargate
+- Container
+- Aurora
+
+
+スタック作成はバージニア北部
+https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-wafv2-webacl.html#cfn-wafv2-webacl-scope
+
+
+https://s3-external-1.amazonaws.com/cf-templates-1shixa0a23rz9-us-east-1/2023321RoR-new.templatehwxplk6fhq
+
+1.VPC(subnets, route tables, internet gateways),ALB
+2.Aurora DB
+3.ECS, Fargate, Container
+4.ApiGateway
+5.CloudFront,WAF
+
+
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/20233242R2-new.templatendy4ui3q9g
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326T7a-new.templatecpe9qsv1csu
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326NKS-new.templatej6rd1lhh7pf
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326RXc-new.templatecz5efbchclt
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326NxR-new.templatehesj65sg5ib
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/20233265Lr-new.templateebb8t1lcxfe
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326e9V-new.templatec5jsr6q4725
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326EGO-new.templatef6l8h842v8q
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326rt0-new.template0vuj1bmm8lx
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326qjh-new.template8m9ggxkohnx
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326E7s-new.template62dvjje0i93
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326Lth-new.templatejbpcxch9lrm
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326xt4-new.template39nylwf01h9
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326VNH-new.template9csorx4zc5j
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326v67-new.templater6kq5drppgn
+https://s3-ap-northeast-1.amazonaws.com/cf-templates-1shixa0a23rz9-ap-northeast-1/2023326xsT-new.template5sxhqtt495
+
+目標
+1.ロカール環境できるbuildエラーなし
+2.CloudFormationできる→resourcesをみせれる
+3.Auth0にちゃんとログインできるの
+
+
+DB cluster info
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbcluster.html
+
+cpuまたはmemory値
+https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/task-cpu-memory-error.html
