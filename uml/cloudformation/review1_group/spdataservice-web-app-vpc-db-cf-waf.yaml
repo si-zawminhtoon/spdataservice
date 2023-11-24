@@ -1,0 +1,641 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Spdataservice - VPC,Aurora MySQL 5.7 DB Cluster,WAF with CloudFront Set up.
+Parameters:
+  Service:
+    Type: String
+    Default: spdataservice
+  environment:
+    Type: String
+    Default: dev
+  envId:
+    AllowedValues: ["spds01", "spds02"]
+    Type: String
+    Default: spds01
+  AvailabilityZone1a:
+    Type: String
+    Default: ap-northeast-1a
+  AvailabilityZone1c:
+    Type: String
+    Default: ap-northeast-1c
+  VpcCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+  PrivateSubnet1CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+  PrivateSubnet2CIDR:
+    Type: String
+    Default: 10.0.2.0/24
+  HTTPPort:
+    Type: Number
+    Default: 8080
+  DBInstanceName:
+    Type: String
+    Default: rds
+  MasterUsername:
+    Type: String
+    Description: The master username for the Aurora DB cluster
+    Default: dbuser
+  MasterUserPassword:
+    Type: String
+    NoEcho: true
+    Default: dbpassword
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: must contain only alphanumeric characters.
+    Description: The master user password for the Aurora DB cluster
+  InstanceType:
+    Type: String
+    Description: The DB instance class for the Aurora DB cluster
+    Default: db.t4g.medium
+    AllowedValues:
+      - "db.r5.12xlarge"
+      - "db.r5.16xlarge"
+      - "db.r5.24xlarge"
+      - "db.r5.2xlarge"
+      - "db.r5.4xlarge"
+      - "db.r5.8xlarge"
+      - "db.r5.large"
+      - "db.r5.xlarge"
+      - "db.r7g.12xlarge"
+      - "db.r7g.16xlarge"
+      - "db.r7g.2xlarge"
+      - "db.r7g.4xlarge"
+      - "db.r7g.8xlarge"
+      - "db.r7g.large"
+      - "db.r7g.xlarge"
+      - "db.r6i.12xlarge"
+      - "db.r6i.16xlarge"
+      - "db.r6i.24xlarge"
+      - "db.r6i.2xlarge"
+      - "db.r6i.32xlarge"
+      - "db.r6i.4xlarge"
+      - "db.r6i.8xlarge"
+      - "db.r6i.large"
+      - "db.r6i.xlarge"
+      - "db.serverless"
+      - "db.t3.large"
+      - "db.t3.medium"
+      - "db.t4g.large"
+      - "db.t4g.medium"
+  PreferredBackupWindow:
+    Description: "In UTC"
+    Type: String
+    Default: 22:00-23:00
+  PreferredMaintenanceWindow:
+    Description: "In UTC"
+    Type: String
+    Default: "sun:19:30-sun:20:00"
+  BackupRetentionPeriod:
+    Description: Days before backup deletion, 3 for dev and 15 for prod
+    Type: Number
+    Default: 3
+  EnableMultiAz:
+    Description: Decide whether the Aurora Cluster has a single instance or 2 instances.
+    Type: String
+    Default: true
+    AllowedValues:
+      - "true"
+      - "false"
+  DBSnapshotArn:
+    Description: If you want to create an Aurora Cluster from your snapshot, please enter your Snapshot ARN. If you leave it empty, this template creates a brand new Aurora Cluster.
+    Type: String
+  WebACLName:
+    Type: String
+    Description: Name for the WAF WebACL
+    Default: WebACL
+  CloudFrontCustomDNSName:
+    Type: String
+    Default: spdataservice.cloudfront.net
+
+Conditions:
+  isBrandNewDB: !Equals [ !Ref DBSnapshotArn, "" ]
+  enableMultiAz: !Equals [ !Ref EnableMultiAz, "true" ]
+
+Resources: 
+
+# ##################################################
+# ## VPC
+# ##################################################
+
+  VPC: 
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: 
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-vpc
+        - Key: Service
+          Value: !Ref Service
+        - Key: environment
+          Value: !Ref environment 
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      AvailabilityZone: !Ref AvailabilityZone1a
+      Tags: 
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-private-subnet-a
+        - Key: Service
+          Value: !Ref Service
+        - Key: environment
+          Value: !Ref environment
+
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      AvailabilityZone: !Ref AvailabilityZone1c
+      Tags: 
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-private-subnet-c
+        - Key: Service
+          Value: !Ref Service
+        - Key: environment
+          Value: !Ref environment
+
+
+# ##################################################
+# ## InternetGateway
+# ##################################################
+
+  InternetGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-igw
+        - Key: Service
+          Value: !Ref Service
+        - Key: environment
+          Value: !Ref environment
+
+  InternetGWAtt:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGW
+
+
+# ##################################################
+# ## NatGateway
+# ##################################################
+
+  NatGW1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGW1EIP.AllocationId
+      SubnetId: !Ref PrivateSubnetA
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-natgw01
+        - Key: Service
+          Value: !Ref Service
+        - Key: environment
+          Value: !Ref environment
+
+  NatGW1EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref VPC
+
+  Spds01DevNatGW2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGW2EIP.AllocationId
+      SubnetId: !Ref PrivateSubnetC
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-natgw02
+        - Key: Service
+          Value: !Ref Service
+        - Key: environment
+          Value: !Ref environment
+
+  NatGW2EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref VPC
+
+
+# ##################################################
+# ## RouteTable
+# ##################################################
+
+  PrivateRtb:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-private-rtb01
+        - Key: Service
+          Value: !Ref Service
+        - Key: environment
+          Value: !Ref environment
+    DependsOn: InternetGWAtt
+
+  PrivateRouteIgw:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRtb
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGW
+    DependsOn: InternetGWAtt
+
+  SubnetAPrivateRtbAss:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRtb
+
+  SubnetCPrivateRtbAss:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetC
+      RouteTableId: !Ref PrivateRtb
+
+
+# ##################################################
+# ## VPC SecurityGroup
+# ##################################################
+
+  VpcSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Allow HTTP inbound traffic to private instances'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPPort
+          ToPort: !Ref HTTPPort
+          CidrIp: "0.0.0.0/0"
+
+  ALB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Subnets:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetC
+      SecurityGroups:
+        - !Ref VpcSG
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-ALB
+
+
+# ##################################################
+# ## DBCluster
+# ##################################################
+
+  AuroraDBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-mysql
+      EngineVersion: 5.7.mysql_aurora.2.11.4
+      SnapshotIdentifier: !If [isBrandNewDB, !Ref "AWS::NoValue", !Ref DBSnapshotArn ]
+      DBClusterIdentifier: !Sub ${envId}-${environment}-cluster
+      MasterUsername: !If [isBrandNewDB, !Ref MasterUsername, !Ref "AWS::NoValue" ]
+      MasterUserPassword: !If [isBrandNewDB, !Ref MasterUserPassword, !Ref "AWS::NoValue" ]
+      Port: 3306
+      DBSubnetGroupName: !Ref DBSubnetGroup  # Specify your DB subnet group
+      VpcSecurityGroupIds: 
+        - !Ref DBSG
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      PreferredBackupWindow: !Ref PreferredBackupWindow
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: RDS DB parameter group the Aurora Cluster's instance(s).
+      Family: aurora-mysql5.7
+      Parameters:
+        max_connections: 1000
+
+  DBClusterParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: RDS DB cluster parameter group
+      Family: aurora-mysql5.7
+      Parameters:
+        character_set_client: utf8mb4
+        character_set_connection: utf8mb4
+        character_set_database: utf8mb4
+        character_set_filesystem: utf8mb4
+        character_set_results: utf8mb4
+        character_set_server: utf8mb4
+        collation_connection: utf8mb4_bin
+        collation_server: utf8mb4_bin
+        skip-character-set-client-handshake: 1
+        time_zone: UTC
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: RDS subnet group.
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetC
+
+# ##################################################
+# ## DB SecurityGroup
+# ##################################################
+
+  DBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupName: !Sub ${envId}-${environment}-${DBInstanceName}-sg
+      GroupDescription: 'For db'
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${DBInstanceName}-sg
+      # Rule
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !Ref VpcCIDR
+
+
+# ##################################################
+# ## DBInstance 1
+# ##################################################
+
+  AuroraDBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref AuroraDBCluster
+      Engine: aurora-mysql
+      EngineVersion: 5.7.mysql_aurora.2.11.4
+      DBInstanceClass: !Ref InstanceType
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${DBInstanceName}-instance1
+        - Key: Env
+          Value: !Ref environment
+        - Key: Service
+          Value: !Sub ${envId}-${environment}
+        - Key: Role
+          Value: Datastore
+
+
+# ##################################################
+# ## DBInstance 2
+# ##################################################
+
+  AuroraDBInstance2:
+    Type: AWS::RDS::DBInstance
+    Condition: enableMultiAz
+    Properties:
+      DBClusterIdentifier: !Ref AuroraDBCluster
+      Engine: aurora-mysql
+      EngineVersion: 5.7.mysql_aurora.2.11.4
+      DBInstanceClass: !Ref InstanceType
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref DBParameterGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${DBInstanceName}-instance2
+        - Key: Env
+          Value: !Ref environment
+        - Key: Service
+          Value: !Sub ${envId}-${environment}
+        - Key: Role
+          Value: Datastore
+
+# ##################################################
+# ## WAF
+# ##################################################
+
+  WAFWebACL:
+    Type: 'AWS::WAFv2::WebACL'
+    Properties:
+      Name: !Ref WebACLName
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+        #Block: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub ${environment}-${Service}-cloudfront-webacl
+      Rules: 
+        - Name: !Sub ${environment}-${Service}-cloudfront-webacl-rule
+          Action:
+              Allow: {}
+          Priority: 0
+          Statement:
+            IPSetReferenceStatement:
+              Arn: !GetAtt CloudfrontWafIpSet.Arn
+          VisibilityConfig:
+            SampledRequestsEnabled: true     
+            CloudWatchMetricsEnabled: true       
+            MetricName: !Sub ${environment}-${Service}-cloudfront-webacl-rule
+      Tags: 
+        - Key: Name
+          Value: !Sub ${environment}-${Service}-cloudfront-webacl
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref environment
+
+  CloudfrontWafIpSet:
+    Type: AWS::WAFv2::IPSet
+    Properties: 
+      Addresses: 
+        - 1.1.1.1/32
+      Description: IP set for Cloudfront
+      IPAddressVersion: IPV4
+      Name: !Sub ${environment}-${Service}-cloudfront-webacl-ipset
+      Scope: REGIONAL
+      Tags: 
+        - Key: Name
+          Value: !Sub ${environment}-${Service}-cloudfront-webacl-ipset
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref environment
+
+  MyWAFv2Association:
+    Type: 'AWS::WAFv2::WebACLAssociation'
+    Properties:
+      ResourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+      WebACLArn: !Ref WAFWebACL
+
+
+# ##################################################
+# ## CloudFront
+# ##################################################
+
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        HttpVersion: http2
+        Origins:
+          # # Origin?S3???
+          # - Id: S3Origin
+          #   DomainName: !Sub ${envId}-${environment}-${Service}-s3-web-${AWS::AccountId}.s3.${AWS::Region}.amazonaws.com
+          #   S3OriginConfig:
+          #     OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${WebCloudFrontOriginAccessIdentity}"
+          # Origin?ALB???
+          - Id: AlbOrigin
+            # Web-ALB
+            DomainName: !GetAtt ALB.DNSName
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: ["TLSv1.2"]
+        Enabled: true
+        Comment: Web (??) Distribution
+        # DefaultRootObject: /
+        #S3
+        # Logging:
+        #   #IncludeCookies: 'true'
+        #   Bucket: !ImportValue S3LogDomainNameOutput
+        #   Prefix: !Sub RawLogs/cloudfront/${envId}-${environment}-${Service}-web-cloudfront
+        #DefaultCacheBehavior???
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          TargetOriginId: AlbOrigin
+          ForwardedValues:
+            Headers:
+              - Host
+            QueryString: true
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: redirect-to-https
+          SmoothStreaming: true
+          MinTTL: 0
+          DefaultTTL: 0
+          MaxTTL: 0
+        CustomErrorResponses:
+          - ErrorCode: 500
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 501
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 502
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 503
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 504
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+        PriceClass: PriceClass_All
+        # ??????????? (us-east-1) ????????????????????
+        # ViewerCertificate:
+        #   AcmCertificateArn: !Ref VirginiaAcm
+        #   MinimumProtocolVersion: "TLSv1.2_2021"
+        #   SslSupportMethod: "sni-only"
+        ###################################################################
+        # ????????????????????????CloudFormation??????????(CloudFormation???)
+        ###################################################################
+        Aliases:
+          - !Ref CloudFrontCustomDNSName
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-web-cloudfront
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref environment
+
+Outputs:
+
+  VpcOutput:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${envId}-${environment}-VPC
+
+  VPCCidr:
+    Value: !Ref VpcCIDR
+    Export:
+      Name: !Sub ${envId}-${environment}-VPC-CIDR
+
+  PrivateSubnetAOutput:
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: !Sub ${envId}-${environment}-Private-Subnet-A
+
+  PrivateSubnetCOutput:
+    Value: !Ref PrivateSubnetC
+    Export:
+      Name: !Sub ${envId}-${environment}-Private-Subnet-C
+
+  PubRtbOutput:
+    Value: !Ref PrivateRtb
+    Export:
+      Name: !Sub ${envId}-${environment}-Private-RTB
+
+  VpcSGOutput:
+    Value: !Ref VpcSG
+    Export:
+      Name: !Sub ${envId}-${environment}-VPC-SG
+
+  VpcALBOutput:
+    Description: Application Load Balancer ID
+    Value: !Ref ALB
+    Export:
+      Name: !Sub ${envId}-${environment}-ALB
+
+  VpcALBDNSOutput:
+    Description: Application Load Balancer ID
+    Value: !GetAtt ALB.DNSName
+    Export:
+      Name: !Sub ${envId}-${environment}-ALB-DNS
+
+  AuroraDBClusterOutput:
+    Description: An Aurora(MySQL) Cluster
+    Value: !Ref AuroraDBCluster
+    Export:
+      Name: !Sub ${envId}-${environment}-cluster
+
+  DNSNameOutput:
+    Description: The connection endpoint for the DB cluster.
+    Value: !GetAtt AuroraDBCluster.Endpoint.Address
+    Export:
+      Name: !Sub ${envId}-${environment}-dnsname
+
+  ReadDNSNameOutput:
+    Description: The reader endpoint for the DB cluster.
+    Value: !GetAtt AuroraDBCluster.ReadEndpoint.Address
+    Export:
+      Name: !Sub ${envId}-${environment}-read-dnsname
+
+  DbSGOutput:
+    Description: The security group used to manage access to RDS Aurora Serverless.
+    Value: !Ref DBSG
+    Export:
+      Name: !Sub ${envId}-${environment}-DB-SG

@@ -1,67 +1,219 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template for AWS WAF with CloudFront
+Description: Spdataservice - WAF with CloudFront Set up.
 
 Parameters:
+  Service:
+    Type: String
+    Default: spdataservice
+  environment:
+    Type: String
+    Default: dev
+  envId:
+    AllowedValues: ["spds01", "spds02"]
+    Type: String
+    Default: spds01
   WebACLName:
     Type: String
     Description: Name for the WAF WebACL
     Default: MyWebACL
-
   CloudFrontDistributionName:
     Type: String
+    Default: spdataservice.cloudfront.net
     Description: Name for the CloudFront distribution
-    Default: MyCloudFrontDistribution
+  CloudFrontCustomDNSName:
+    Type: String
+    Default: spdataservice.cloudfront.net
+  FargateDNS:
+    Type: String
 
 Resources:
   WAFWebACL:
     Type: 'AWS::WAFv2::WebACL'
     Properties:
       Name: !Ref WebACLName
-      Scope: REGIONAL
+      Scope: CLOUDFRONT
       DefaultAction:
         Allow: {}
-      Rules:
-        - Action:
-            Block: {}
-          Priority: 1
-          RuleAction: Block
-          RuleDefinition:
-            Statements:
-              - Action:
-                  Block: {}
-                ByteMatchStatement:
-                  FieldToMatch:
-                    AllQueryArguments: {}
-                  TextTransformations:
-                    - Priority: 0
-                      Type: NONE
-                  PositionalConstraint: EXACTLY
-                  SearchString: "example.com"
+        #Block: {}
       VisibilityConfig:
         SampledRequestsEnabled: true
         CloudWatchMetricsEnabled: true
-        MetricName: MyWebACLMetrics
+        MetricName: !Sub bpf-${environment}-${Service}-cloudfront-webacl
+      Rules: 
+        - Name: !Sub ${environment}-${Service}-cloudfront-webacl-rule
+          Action:
+              Allow: {}
+          Priority: 0
+          Statement:
+            IPSetReferenceStatement:
+              Arn: !GetAtt CloudfrontWafIpSet.Arn
+          VisibilityConfig:
+            SampledRequestsEnabled: true     
+            CloudWatchMetricsEnabled: true       
+            MetricName: !Sub ${environment}-${Service}-cloudfront-webacl-rule
+      Tags: 
+        - Key: Name
+          Value: !Sub bpf-${environment}-${Service}-cloudfront-webacl
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref environment
+
+  CloudfrontWafIpSet:
+    Type: AWS::WAFv2::IPSet
+    Properties: 
+      Addresses: 
+        - 1.1.1.1/32
+      Description: IP set for Cloudfront
+      IPAddressVersion: IPV4
+      Name: !Sub ${environment}-${Service}-cloudfront-webacl-ipset
+      Scope: CLOUDFRONT
+      Tags: 
+        - Key: Name
+          Value: !Sub ${environment}-${Service}-cloudfront-webacl-ipset
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref environment
+
+  MyWAFv2Association:
+    Type: 'AWS::WAFv2::WebACLAssociation'
+    Properties:
+      ResourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+      WebACLArn: !Ref WAFWebACL
 
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'
     Properties:
       DistributionConfig:
+        HttpVersion: http2
         Origins:
-          - DomainName: example-s3-bucket.s3.amazonaws.com  # Replace with your S3 bucket or origin
-            Id: S3Origin
-            S3OriginConfig:
-              OriginAccessIdentity: ''
+          # # Origin?S3???
+          # - Id: S3Origin
+          #   DomainName: !Sub ${envId}-${environment}-${Service}-s3-web-${AWS::AccountId}.s3.${AWS::Region}.amazonaws.com
+          #   S3OriginConfig:
+          #     OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CafeWebCloudFrontOriginAccessIdentity}"
+          # Origin?ALB???
+          - Id: AlbOrigin
+            # Web-ALB????????????
+            DomainName: Fn::GetAtt {Fn::ImportValue: !Sub "${envId}-${environment}-ALB"}.DNSName
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: ["TLSv1.2"]
         Enabled: true
-        Comment: CloudFront distribution protected by WAF
-        DefaultRootObject: index.html
+        Comment: Cafe Web (??) Distribution
+        # DefaultRootObject: /
+        #S3??????????
+        # Logging:
+        #   #IncludeCookies: 'true'
+        #   Bucket: !ImportValue CafeS3LogDomainNameOutput
+        #   Prefix: !Sub RawLogs/cloudfront/${envId}-${environment}-${Service}-web-cloudfront
+        #DefaultCacheBehavior???
         DefaultCacheBehavior:
-          TargetOriginId: S3Origin
-          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          TargetOriginId: AlbOrigin
           ForwardedValues:
+            Headers:
+              - Host
             QueryString: true
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: redirect-to-https
+          SmoothStreaming: true
+          #?????????????TTL?0????????
+          MinTTL: 0
+          DefaultTTL: 0
+          MaxTTL: 0
+        #CacheBehavior???(ALB)
+        # CacheBehaviors:
+          # - AllowedMethods:
+          #     - DELETE
+          #     - GET
+          #     - HEAD
+          #     - OPTIONS
+          #     - PATCH
+          #     - POST
+          #     - PUT
+          #   TargetOriginId: AlbOrigin
+          #   ForwardedValues:
+          #     Headers:
+          #       - Host
+          #     QueryString: true
+          #     Cookies:
+          #       Forward: all
+          #   ViewerProtocolPolicy: redirect-to-https
+          #   # ?????????????TTL?0????????
+          #   MinTTL: 0
+          #   DefaultTTL: 0
+          #   MaxTTL: 0
+          #CacheBehavior???(S3)
+          # - AllowedMethods:
+          #     - DELETE
+          #     - GET
+          #     - HEAD
+          #     - OPTIONS
+          #     - PATCH
+          #     - POST
+          #     - PUT
+          #   TargetOriginId: S3Origin
+          #   ForwardedValues:
+          #     QueryString: false
+          #     Cookies:
+          #       Forward: none
+          #   ViewerProtocolPolicy: https-only
+          #   PathPattern: /web/*
+          #   # ?????????????TTL?0????????
+          #   MinTTL: 0
+          #   DefaultTTL: 0
+          #   MaxTTL: 0
+        # 50X????????Sorry???(503)??????????????
+        CustomErrorResponses:
+          - ErrorCode: 500
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 501
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 502
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 503
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 504
+            ResponsePagePath: /sorry.html
+            ResponseCode: 503
+            ErrorCachingMinTTL: 0
+        PriceClass: PriceClass_All
+        # ??????????? (us-east-1) ????????????????????
+        ViewerCertificate:
+          AcmCertificateArn: !Ref VirginiaAcm
+          MinimumProtocolVersion: "TLSv1.2_2021"
+          SslSupportMethod: "sni-only"
+        ###################################################################
+        # ????????????????????????CloudFormation??????????(CloudFormation???)
+        ###################################################################
         Aliases:
-          - example.com  # Replace with your custom domain
-        WebACLId: !Ref WAFWebACL
+          - !Ref CloudFrontCustomDNSName
+      Tags:
+        - Key: Name
+          Value: !Sub ${envId}-${environment}-${Service}-web-cloudfront
+        - Key: Service
+          Value: !Ref Service
+        - Key: Environment
+          Value: !Ref Environment
 
 Outputs:
   CloudFrontDistributionId:

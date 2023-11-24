@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description:
-  spdataservice - Web-App-ECS Set up.
+  spdataservice - ECS and Fargate container Set up.
 
 Parameters:
   Service:
